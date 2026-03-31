@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nexus – Astra TD Preview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #020408; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #d8f1ff; }
+    canvas { display: block; }
+    #label {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      color: #46d4ff; font-size: 11px; letter-spacing: 0.25em; font-weight: 700;
+      background: rgba(6,10,22,0.7); padding: 6px 16px; border-radius: 6px;
+      border: 1px solid rgba(70,212,255,0.25);
+    }
+    #ctrl {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px;
+      background: rgba(6,10,22,0.85); border: 1px solid rgba(70,212,255,0.3);
+      border-radius: 10px; padding: 10px 18px; backdrop-filter: blur(6px);
+    }
+    button {
+      background: rgba(70,212,255,0.12); color: #d8f1ff; border: 1px solid rgba(70,212,255,0.4);
+      border-radius: 6px; padding: 7px 18px; font-size: 12px; letter-spacing: 0.1em; cursor: pointer;
+      transition: background .2s;
+    }
+    button:hover  { background: rgba(70,212,255,0.25); }
+    button.red    { border-color: rgba(255,32,96,0.5); }
+    button.red:hover { background: rgba(255,32,96,0.2); }
+  </style>
+</head>
+<body>
+  <div id="label">NEXUS MODEL PREVIEW</div>
+  <div id="ctrl">
+    <button id="btn-hit">TRIGGER HIT</button>
+    <button id="btn-explode" class="red">TRIGGER EXPLODE</button>
+    <button id="btn-reset">RESET</button>
+  </div>
+
+  <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.162.0/build/three.module.js"}}</script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { createNexus }    from './Nexus.js';
+    import { createStarField } from './StarField.js';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x020408);
+
+    const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 400);
+    cam.position.set(0, 4, 7);
+    cam.lookAt(0, 1.2, 0);
+
+    scene.add(new THREE.AmbientLight(0x1a2a4a, 0.7));
+    const key = new THREE.DirectionalLight(0xd0e8ff, 1.2);
+    key.position.set(8, 14, 6); key.castShadow = true;
+    scene.add(key);
+
+    const stars = createStarField();
+    scene.add(stars.mesh);
+
+    let nexus = createNexus();
+    scene.add(nexus.mesh);
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      cam.aspect = innerWidth / innerHeight;
+      cam.updateProjectionMatrix();
+    });
+
+    document.getElementById('btn-hit').addEventListener('click', () => nexus.triggerHit());
+    document.getElementById('btn-explode').addEventListener('click', () => nexus.triggerExplode(() => {}));
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      scene.remove(nexus.mesh);
+      nexus = createNexus();
+      scene.add(nexus.mesh);
+    });
+
+    // Orbit cam
+    let angle = 0;
+    const clock = new THREE.Clock();
+    (function loop() {
+      requestAnimationFrame(loop);
+      const dt = clock.getDelta();
+      stars.update(dt);
+      nexus.update(dt);
+      angle += dt * 0.3;
+      cam.position.set(Math.sin(angle) * 7, 4, Math.cos(angle) * 7);
+      cam.lookAt(0, 1.2, 0);
+      renderer.render(scene, cam);
+    })();
+  </script>
+</body>
+</html>

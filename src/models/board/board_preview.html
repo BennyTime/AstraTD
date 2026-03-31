@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Board – Astra TD Preview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #020408; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+    canvas { display: block; }
+    #ctrl {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px;
+      background: rgba(6,10,22,0.85); border: 1px solid rgba(70,212,255,0.3);
+      border-radius: 10px; padding: 10px 18px; backdrop-filter: blur(6px);
+    }
+    button {
+      background: rgba(70,212,255,0.12); color: #d8f1ff; border: 1px solid rgba(70,212,255,0.4);
+      border-radius: 6px; padding: 7px 16px; font-size: 12px; letter-spacing: 0.1em; cursor: pointer;
+      transition: background .2s;
+    }
+    button:hover { background: rgba(70,212,255,0.25); }
+    #label {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      color: #46d4ff; font-size: 11px; letter-spacing: 0.25em; font-weight: 700;
+      background: rgba(6,10,22,0.7); padding: 6px 16px; border-radius: 6px;
+      border: 1px solid rgba(70,212,255,0.25);
+    }
+  </style>
+</head>
+<body>
+  <div id="label">BOARD MODEL PREVIEW</div>
+  <div id="ctrl">
+    <button id="btn-orbit">TOGGLE ORBIT</button>
+    <button id="btn-top">TOP VIEW</button>
+    <button id="btn-side">SIDE VIEW</button>
+    <button id="btn-persp">PERSPECTIVE</button>
+  </div>
+
+  <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.162.0/build/three.module.js"}}</script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { createBoard } from './Board.js';
+    import { createStarField } from '../misc/StarField.js';
+    import { GameConfig } from '../../config/GameConfig.js';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x020408);
+    scene.fog = new THREE.FogExp2(0x020a18, 0.010);
+
+    const cam = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 600);
+    cam.position.set(0, 22, 28);
+    cam.lookAt(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0x1a2a4a, 0.7));
+    const key = new THREE.DirectionalLight(0xd0e8ff, 1.2);
+    key.position.set(12, 20, 8); key.castShadow = true;
+    scene.add(key);
+
+    const stars = createStarField();
+    scene.add(stars.mesh);
+
+    const board = createBoard(GameConfig.pathWaypoints);
+    scene.add(board.mesh);
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      cam.aspect = innerWidth / innerHeight;
+      cam.updateProjectionMatrix();
+    });
+
+    // Orbit controls (manual)
+    let orbitActive = true;
+    let orbitAngle = 0;
+    const orbitR = 30, orbitH = 18;
+
+    document.getElementById('btn-orbit').addEventListener('click', () => { orbitActive = !orbitActive; });
+    document.getElementById('btn-top').addEventListener('click', () => {
+      orbitActive = false;
+      cam.position.set(0, 40, 0.01); cam.lookAt(0,0,0);
+    });
+    document.getElementById('btn-side').addEventListener('click', () => {
+      orbitActive = false;
+      cam.position.set(35, 8, 0); cam.lookAt(0,0,0);
+    });
+    document.getElementById('btn-persp').addEventListener('click', () => {
+      orbitActive = true;
+      orbitAngle = 0;
+    });
+
+    const clock = new THREE.Clock();
+    (function loop() {
+      requestAnimationFrame(loop);
+      const dt = clock.getDelta();
+      stars.update(dt);
+      board.update(dt);
+      if (orbitActive) {
+        orbitAngle += dt * 0.25;
+        cam.position.set(Math.sin(orbitAngle) * orbitR, orbitH, Math.cos(orbitAngle) * orbitR);
+        cam.lookAt(0, 0, 0);
+      }
+      renderer.render(scene, cam);
+    })();
+  </script>
+</body>
+</html>

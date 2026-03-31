@@ -181,3 +181,16 @@
 - Start `#15` only after `#23` is integrated.
 - Complete `#24` before finishing `#14` balancing/tuning.
 - Keep `#27`, `#19`, `#20`, and `#28` near the end to avoid rework.
+
+
+
+## Notes
+Crystals look to spiky and look like they belong in the ground. should be more like a floating rock.
+Robot's death animation is still weird, need to rework that.
+Board needs a visual overall, especially with the lines.
+The Dropship is a neat idea, but lets make it instead of lowering a bridge make it beam down the enemies, startrek style.
+Add extra elements in the background. could add a Sun, a space station, stuff like that.
+Cannon and enemy models look good. Cargo ship needs some changes to the model. Board really needs a major visual overall. Crystals should be rocks.
+Whole thing looks too dark.
+EVENTUALLY lets add some maps, 2 more. as a way to have replayability.
+Turret targeting is a bit off, could be nice to have a way to choose between targeting the closest or the first enemy.

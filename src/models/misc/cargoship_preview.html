@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cargo Ship – Astra TD Preview</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 100%; height: 100%; background: #020408; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #d8f1ff; }
+    canvas { display: block; }
+    #label {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      color: #aa44ff; font-size: 11px; letter-spacing: 0.25em; font-weight: 700;
+      background: rgba(6,10,22,0.7); padding: 6px 16px; border-radius: 6px;
+      border: 1px solid rgba(170,68,255,0.3);
+    }
+    #ctrl {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 10px;
+      background: rgba(6,10,22,0.85); border: 1px solid rgba(170,68,255,0.3);
+      border-radius: 10px; padding: 10px 18px; backdrop-filter: blur(6px);
+    }
+    button {
+      background: rgba(170,68,255,0.12); color: #d8f1ff; border: 1px solid rgba(170,68,255,0.4);
+      border-radius: 6px; padding: 7px 18px; font-size: 12px; letter-spacing: 0.1em; cursor: pointer;
+      transition: background .2s;
+    }
+    button:hover { background: rgba(170,68,255,0.25); }
+  </style>
+</head>
+<body>
+  <div id="label">CARGO SHIP MODEL PREVIEW</div>
+  <div id="ctrl">
+    <button id="btn-open">DEPLOY BRIDGE</button>
+    <button id="btn-close">RETRACT BRIDGE</button>
+    <button id="btn-orbit">TOGGLE ORBIT</button>
+  </div>
+
+  <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.162.0/build/three.module.js"}}</script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { createCargoShip } from './CargoShip.js';
+    import { createStarField }  from './StarField.js';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.setSize(innerWidth, innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x020408);
+
+    const cam = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 400);
+    cam.position.set(0, 4, 10);
+    cam.lookAt(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0x1a2a4a, 0.6));
+    const key = new THREE.DirectionalLight(0xc0d8ff, 1.1);
+    key.position.set(8, 12, 6); key.castShadow = true;
+    scene.add(key);
+
+    const stars = createStarField();
+    scene.add(stars.mesh);
+
+    const ship = createCargoShip();
+    scene.add(ship.mesh);
+    ship.setBaseY(0);
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      cam.aspect = innerWidth / innerHeight;
+      cam.updateProjectionMatrix();
+    });
+
+    let orbitActive = true;
+    let angle = 0;
+    document.getElementById('btn-open').addEventListener('click', () => ship.openBay());
+    document.getElementById('btn-close').addEventListener('click', () => ship.closeBay());
+    document.getElementById('btn-orbit').addEventListener('click', () => { orbitActive = !orbitActive; });
+
+    const clock = new THREE.Clock();
+    (function loop() {
+      requestAnimationFrame(loop);
+      const dt = clock.getDelta();
+      stars.update(dt);
+      ship.update(dt);
+      if (orbitActive) {
+        angle += dt * 0.3;
+        cam.position.set(Math.sin(angle) * 10, 4, Math.cos(angle) * 10);
+        cam.lookAt(0, 0, 0);
+      }
+      renderer.render(scene, cam);
+    })();
+  </script>
+</body>
+</html>

@@ -140,14 +140,22 @@ export class Game {
     this._animFns.push(ship);
     this._cargoShip = ship;
 
-    // ── Floating crystals (decorative, around board edges) ──
+    // ── Floating crystals ──────────────────────────────────────────────
     const crystalDefs = [
-      { x: -13, z:  7, scale: 0.9, color: 0x44aaff, orbitY: 3.5, phase: 0 },
-      { x: -13, z: -7, scale: 0.7, color: 0x8844ff, orbitY: 3.0, phase: 1 },
-      { x:  13, z:  7, scale: 0.8, color: 0x00ffcc, orbitY: 4.0, phase: 2 },
-      { x:  13, z: -7, scale: 0.6, color: 0x4444ff, orbitY: 2.8, phase: 3 },
+      { x: -13, z:  7,  scale: 0.9, color: 0xcc44aa, orbitY: 3.5, phase: 0 },
+      { x: -13, z: -7,  scale: 0.7, color: 0x8844ff, orbitY: 3.0, phase: 1 },
+      { x:  13, z:  7,  scale: 0.8, color: 0x44aaff, orbitY: 4.0, phase: 2 },
+      { x:  13, z: -7,  scale: 0.6, color: 0xee66cc, orbitY: 2.8, phase: 3 },
       { x:   0, z:  11, scale: 1.0, color: 0xaa44ff, orbitY: 3.2, phase: 4 },
-      { x:   0, z: -11, scale: 0.75, color: 0x44aaff, orbitY: 3.8, phase: 5 },
+      { x:   0, z: -11, scale: 0.75,color: 0x44aaff, orbitY: 3.8, phase: 5 },
+      { x: -22, z:  13, scale: 1.4, color: 0xcc44aa, orbitY: 5.0, phase: 6  },
+      { x: -20, z: -14, scale: 1.2, color: 0x8844ff, orbitY: 5.5, phase: 7  },
+      { x:  21, z:  13, scale: 1.3, color: 0xee66cc, orbitY: 4.8, phase: 8  },
+      { x:  23, z: -11, scale: 1.5, color: 0x44aaff, orbitY: 6.0, phase: 9  },
+      { x:  -5, z:  17, scale: 1.1, color: 0x8844ff, orbitY: 4.4, phase: 10 },
+      { x:   7, z: -17, scale: 1.3, color: 0xcc44aa, orbitY: 5.2, phase: 11 },
+      { x: -18, z:   1, scale: 1.0, color: 0xee66cc, orbitY: 4.0, phase: 12 },
+      { x:  17, z:   2, scale: 1.2, color: 0x44aaff, orbitY: 4.6, phase: 13 },
     ];
     crystalDefs.forEach(({ x, z, scale, color, orbitY, phase }) => {
       const c = createFloatingCrystal({ color, scale, orbitR: 0, orbitY: this._config.boardY + orbitY, phase });
@@ -156,11 +164,19 @@ export class Game {
       this._animFns.push(c);
     });
 
-    // Extra cluster on right side near nexus
-    const cluster = createCrystalCluster({ orbitY: 2.5 });
-    cluster.mesh.position.set(12, this._config.boardY + 1, -3);
-    sc.add(cluster.mesh);
-    this._animFns.push(cluster);
+    // Clusters – several grouped formations scattered around the scene
+    const clusterDefs = [
+      { x:  12, z: -3,  y: 1,   orbitY: 2.5 },
+      { x: -16, z:  0,  y: 1,   orbitY: 2.8 },
+      { x:   6, z: -15, y: 1.5, orbitY: 3.0 },
+      { x: -10, z:  14, y: 1.5, orbitY: 3.2 },
+    ];
+    clusterDefs.forEach(({ x, z, y, orbitY }) => {
+      const cl = createCrystalCluster({ orbitY });
+      cl.mesh.position.set(x, this._config.boardY + y, z);
+      sc.add(cl.mesh);
+      this._animFns.push(cl);
+    });
   }
 
   _initInteraction() {
@@ -232,12 +248,12 @@ export class Game {
     this._scene.add(turret.mesh);
     this._animFns.push(turret);
     const towerData = {
-      mesh:          turret.mesh,
-      update:        turret.update,
-      triggerSpawn:  turret.triggerSpawn,
-      triggerShoot:  turret.triggerShoot,
-      trackTarget:   turret.trackTarget,
-      _animRef:      turret,
+      mesh: turret.mesh,
+      update: turret.update,
+      triggerSpawn: turret.triggerSpawn,
+      triggerShoot: turret.triggerShoot,
+      trackTarget: turret.trackTarget,
+      _animRef: turret,
       gx, gz,
       hp: 100,
       fireTimer: 0,
@@ -342,12 +358,12 @@ export class Game {
 
     // Keep reference to the animFn entry so we can splice it later
     this._enemies.push({
-      mesh:           e.mesh,
-      update:         e.update,
-      triggerDeath:   e.triggerDeath,
+      mesh: e.mesh,
+      update: e.update,
+      triggerDeath: e.triggerDeath,
       triggerExplode: e.triggerExplode,
-      setWalk:        e.setWalk,
-      _animRef:       e,   // reference to entry in _animFns
+      setWalk: e.setWalk,
+      _animRef: e,   // reference to entry in _animFns
       pathT: 0,
       speed,
       hp,
@@ -445,7 +461,6 @@ export class Game {
   // ── Full reset ────────────────────────────────────────────────────────────
 
   _fullReset() {
-    // Simplest safe reset: full page reload
     location.reload();
   }
 }

@@ -223,6 +223,8 @@ export function createStandardEnemy() {
   let state       = 'walk';  // 'walk' | 'death' | 'explode'
   let walkPhase   = 0;
   let deathTimer  = 0;
+  let breakReady  = false;   // true once the parts have been reparented
+  let breakParts  = [];      // pieces flying after death break
   let explodeTime = 0;
   let t           = 0;
 
@@ -233,6 +235,8 @@ export function createStandardEnemy() {
   function triggerDeath(onDone) {
     state      = 'death';
     deathTimer = 0;
+    breakReady = false;
+    breakParts = [];
     group.userData._deathDone = onDone;
   }
 
@@ -272,27 +276,78 @@ export function createStandardEnemy() {
     } else if (state === 'death') {
       deathTimer += delta;
 
-      // Crumple: knees bend, torso leans forward
-      const lean = Math.min(1, deathTimer / 0.8);
-      legL.kneePivot.rotation.x = -lean * 1.3;
-      legR.kneePivot.rotation.x = -lean * 1.3;
-      legL.hipPivot.rotation.x  =  lean * 0.3;
-      legR.hipPivot.rotation.x  =  lean * 0.3;
-      torso.position.y = 1.0 * SCALE - lean * 0.45;
-      torso.rotation.x = lean * 0.7;
+      if (!breakReady) {
+        // ── Flinch (0 → 0.13s): hit-flash before breaking apart ──────────
+        const flinch = Math.sin((Math.min(deathTimer, 0.13) / 0.13) * Math.PI);
+        torso.rotation.x        = -flinch * 0.3;
+        visorMat.emissiveIntensity = 2.0 + flinch * 2.5;  // bright flicker
+        chestLight.intensity    =  flinch * 3.5;
 
-      // Fade out
-      if (deathTimer > 0.7) {
-        const fade = 1 - Math.min(1, (deathTimer - 0.7) / 0.6);
-        [bodyMat, accentMat, visorMat, jointMat, darkMat].forEach(m => {
-          m.transparent = true;
-          m.opacity = fade;
+        if (deathTimer >= 0.13) {
+          breakReady = true;
+
+          // Reparent legs (children of pelvis) directly to group,
+          // preserving their current world transform.
+          [legL.hipPivot, legR.hipPivot].forEach(hip => {
+            const wp = new THREE.Vector3();
+            hip.getWorldPosition(wp);
+            const wq = new THREE.Quaternion();
+            hip.getWorldQuaternion(wq);
+            hip.parent.remove(hip);
+            group.add(hip);
+            group.worldToLocal(wp);
+            hip.position.copy(wp);
+            const gq = new THREE.Quaternion();
+            group.getWorldQuaternion(gq);
+            hip.quaternion.copy(gq.invert().multiply(wq));
+          });
+
+          // Assign outward velocities – spread ≈90° apart so pieces scatter
+          [torso, pelvis, legL.hipPivot, legR.hipPivot].forEach((obj, i) => {
+            const angle = (i * Math.PI / 2) + (Math.random() - 0.5) * 0.9;
+            const spd   = 2.0 + Math.random() * 2.5;
+            obj.userData.breakVel = new THREE.Vector3(
+              Math.cos(angle) * spd,
+              1.8 + Math.random() * 3.5,
+              Math.sin(angle) * spd
+            );
+            obj.userData.breakRot = new THREE.Vector3(
+              (Math.random() - 0.5) * 12,
+              (Math.random() - 0.5) * 12,
+              (Math.random() - 0.5) * 12
+            );
+          });
+          breakParts = [torso, pelvis, legL.hipPivot, legR.hipPivot];
+        }
+
+      } else {
+        // ── Break phase: pieces fly apart ─────────────────────────────────
+        const bTime = deathTimer - 0.13;
+
+        // Quickly kill the flash light
+        chestLight.intensity = Math.max(0, chestLight.intensity - delta * 18);
+
+        breakParts.forEach(obj => {
+          obj.position.addScaledVector(obj.userData.breakVel, delta);
+          obj.userData.breakVel.y -= delta * 9.5;  // gravity
+          obj.rotation.x += obj.userData.breakRot.x * delta;
+          obj.rotation.y += obj.userData.breakRot.y * delta;
+          obj.rotation.z += obj.userData.breakRot.z * delta;
         });
-      }
 
-      if (deathTimer > 1.3) {
-        const cb = group.userData._deathDone;
-        if (typeof cb === 'function') cb();
+        // Fade all materials from 0.2s after break
+        if (bTime > 0.20) {
+          const fade = 1 - Math.min(1, (bTime - 0.20) / 0.90);
+          [bodyMat, accentMat, visorMat, jointMat, darkMat].forEach(m => {
+            m.transparent = true;
+            m.opacity = fade;
+          });
+        }
+
+        if (bTime > 1.10) {
+          const cb = group.userData._deathDone;
+          if (typeof cb === 'function') cb();
+        }
       }
 
     } else if (state === 'explode') {

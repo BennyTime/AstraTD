@@ -138,8 +138,9 @@ export class Game {
 
     // ── Cargo Ship ──
     const ship = createCargoShip();
-    ship.mesh.position.set(-14, this._config.boardY + 2.5, 0);
+    ship.mesh.position.set(-11, 0.0, 0.0);
     ship.mesh.rotation.y = -Math.PI / 2;
+    ship.setBaseY(this._config.boardY + 4);
     sc.add(ship.mesh);
     this._animFns.push(ship);
     this._cargoShip = ship;

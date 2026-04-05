@@ -51,17 +51,18 @@
     document.body.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x020408);
+    scene.background = new THREE.Color(0x0d1a2e);
 
     const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 300);
     cam.position.set(0, 2.2, 5);
     cam.lookAt(0, 1, 0);
 
-    scene.add(new THREE.AmbientLight(0x1a2a4a, 0.7));
-    const key = new THREE.DirectionalLight(0xd0e8ff, 1.3);
+    scene.add(new THREE.AmbientLight(0x8cb8d8, 2.2));
+    scene.add(new THREE.HemisphereLight(0xfff4cc, 0x334466, 1.4));
+    const key = new THREE.DirectionalLight(0xfff2d0, 2.8);
     key.position.set(6, 10, 5); key.castShadow = true;
     scene.add(key);
-    const fill = new THREE.DirectionalLight(0x8020c0, 0.3);
+    const fill = new THREE.DirectionalLight(0x8040c0, 0.7);
     fill.position.set(-5, 4, -8);
     scene.add(fill);
 

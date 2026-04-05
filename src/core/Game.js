@@ -16,11 +16,11 @@ export class Game {
     this._mount = mountElement;
     this._hudEl = hudElement;
     this._config = GameConfig;
-    this._state  = new GameState(GameConfig);
-    this._animFns  = [];   // { update(delta) } entries
-    this._enemies  = [];   // live enemy objects { mesh, update, hp, pathT, ... }
-    this._towers   = [];   // placed towers
-    this._clock    = new THREE.Clock(false);
+    this._state = new GameState(GameConfig);
+    this._animFns = [];   // { update(delta) } entries
+    this._enemies = [];   // live enemy objects { mesh, update, hp, pathT, ... }
+    this._towers = [];   // placed towers
+    this._clock = new THREE.Clock(false);
     this._spawnQueue = 0;
     this._spawnAccum = 0;
   }
@@ -57,17 +57,21 @@ export class Game {
   _initScene() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x020408);
-    scene.fog = new THREE.FogExp2(0x020a18, 0.012);
+    scene.fog = new THREE.FogExp2(0x0a1a2e, 0.008);
     this._scene = scene;
   }
 
   _initLights() {
-    // Ambient
-    const ambient = new THREE.AmbientLight(0x1a2a4a, 0.7);
+    // Ambient — warm-toned so the organic board colours read correctly
+    const ambient = new THREE.AmbientLight(0x8cb8d8, 2.2);
     this._scene.add(ambient);
 
-    // Key light (from above-right)
-    const key = new THREE.DirectionalLight(0xd0e8ff, 1.2);
+    // Hemisphere: warm sky above, green-earth below — gives the "daylit greenhouse" feel
+    const hemi = new THREE.HemisphereLight(0xfff4cc, 0x3a6e28, 1.6);
+    this._scene.add(hemi);
+
+    // Key light (from above-right) — brighter warm sun
+    const key = new THREE.DirectionalLight(0xfff2d0, 2.8);
     key.position.set(12, 20, 8);
     key.castShadow = true;
     key.shadow.mapSize.width = key.shadow.mapSize.height = 2048;
@@ -79,12 +83,12 @@ export class Game {
     this._scene.add(key);
 
     // Fill light (cool blue from left)
-    const fill = new THREE.DirectionalLight(0x3040a0, 0.4);
+    const fill = new THREE.DirectionalLight(0x6080d0, 1.0);
     fill.position.set(-10, 8, -5);
     this._scene.add(fill);
 
     // Rim light (magenta accent from behind)
-    const rim = new THREE.DirectionalLight(0x8020c0, 0.25);
+    const rim = new THREE.DirectionalLight(0x9030d0, 0.55);
     rim.position.set(0, 5, -20);
     this._scene.add(rim);
   }

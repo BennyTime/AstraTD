@@ -186,11 +186,6 @@
 
 ## Notes
 
-The Dropship is a neat idea, but lets make it instead of lowering a bridge make it beam down the enemies, startrek style.
 Add extra elements in the background. could add a Sun, which would provide the main light source, a space station, stuff like that.
-Cannon and enemy models look good. Cargo ship needs some changes to the model. Board really needs a major visual overall. 
 EVENTUALLY lets add some maps, 2 more. as a way to have replayability.
 Turret targeting is a bit off, could be nice to have a way to choose between targeting the closest or the first enemy.
-Maybe change to meshtoon, looks really nice.
-Lets make the board's inside design be like a greenhouse, with grass and life. thats a way to have a different design for it.
-The rest of the board should still be technological, maybe blend both themes.

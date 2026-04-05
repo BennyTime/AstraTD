@@ -8,23 +8,21 @@ export const GameConfig = {
 
   // Path waypoints (XZ on the board, Y = boardY + tileHeight)
   pathWaypoints: [
-    [-11, 0, 0],   // spawn (left edge)
-    [-6,  0, 0],
-    [-6,  0, -6],
-    [ 0,  0, -6],
-    [ 0,  0,  6],
-    [ 6,  0,  6],
-    [ 6,  0, -6],
-    [10,  0, -6],  // => nexus (right edge)
+    [-11, 0,  0],
+    [ -4, 0,  0],
+    [ -4, 0, -5],
+    [  5, 0, -5],
+    [  5, 0,  5],
+    [ 11, 0,  5],
   ],
 
   // Waves
-  totalWaves:         5,      // waves required to win
-  waveCooldown:    5000,      // ms between waves
-  enemiesPerWave:     6,      // base count on wave 1
-  enemiesPerWaveGrow: 2,      // +N enemies each wave
-  spawnInterval:   1200,      // ms between enemy spawns
-
+  totalWaves:         5,
+  waveCooldown:    5000,
+  enemiesPerWave:     6,
+  enemiesPerWaveGrow: 2,
+  spawnInterval:   1200,
+  
   // Economy
   startingGold: 200,
   killReward: 25,

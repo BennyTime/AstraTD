@@ -7,7 +7,8 @@ import { createBoard }     from '../models/board/Board.js';
 import { createNexus }     from '../models/misc/Nexus.js';
 import { createCargoShip } from '../models/misc/CargoShip.js';
 import { createCrystalCluster, createFloatingCrystal } from '../models/misc/FloatingCrystal.js';
-import { createStarField } from '../models/misc/StarField.js';
+import { createStarField }    from '../models/misc/StarField.js';
+import { createSun }          from '../models/misc/Sun.js';
 import { createStandardEnemy } from '../models/enemies/StandardEnemy.js';
 import { createLaserTurret }   from '../models/towers/LaserTurret.js';
 
@@ -70,17 +71,7 @@ export class Game {
     const hemi = new THREE.HemisphereLight(0xfff4cc, 0x3a6e28, 1.6);
     this._scene.add(hemi);
 
-    // Key light (from above-right) — brighter warm sun
-    const key = new THREE.DirectionalLight(0xfff2d0, 2.8);
-    key.position.set(12, 20, 8);
-    key.castShadow = true;
-    key.shadow.mapSize.width = key.shadow.mapSize.height = 2048;
-    key.shadow.camera.near = 1;
-    key.shadow.camera.far  = 80;
-    key.shadow.camera.left = key.shadow.camera.bottom = -25;
-    key.shadow.camera.right = key.shadow.camera.top   =  25;
-    key.shadow.bias = -0.001;
-    this._scene.add(key);
+    // Key / shadow light is owned by the Sun object — added in _buildWorld.
 
     // Fill light (cool blue from left)
     const fill = new THREE.DirectionalLight(0x6080d0, 1.0);
@@ -109,6 +100,19 @@ export class Game {
     sc.add(stars.mesh);
     this._animFns.push(stars);
 
+    // ── Sun (visual + main shadow-casting key light) ──
+    // Placed at (22, 8, -18): behind and slightly above the board, which
+    // projects to ~25° from screen centre in the upper-right — inside the
+    // camera’s 27.5° vertical half-FOV. The light direction follows the mesh.
+    const sunPos = new THREE.Vector3(22, 8, -18);
+    const sun = createSun();
+    sun.mesh.position.copy(sunPos);
+    sc.add(sun.mesh);
+    sun.light.position.copy(sunPos);  // light shines from sun toward (0,0,0)
+    sc.add(sun.light);
+    sc.add(sun.light.target);         // target stays at default (0,0,0)
+    this._animFns.push(sun);
+
     // ── Board ──
     const board = createBoard(wp);
     board.mesh.position.y = this._config.boardY;
@@ -117,14 +121,19 @@ export class Game {
     this._board = board;
 
     // ── Path curve (for enemy movement) ──
-    const curvePoints = wp.map(([x, y, z]) =>
-      new THREE.Vector3(x, this._config.boardY + 0.6, z)
-    );
-    this._pathCurve = new THREE.CatmullRomCurve3(curvePoints);
+    // Use a CurvePath of straight LineCurve3 segments so enemies follow
+    // the exact axis-aligned polyline that is drawn on the board.
+    const yOff = this._config.boardY + 0.6;
+    const pts  = wp.map(([x, y, z]) => new THREE.Vector3(x, yOff, z));
+    const curvePath = new THREE.CurvePath();
+    for (let i = 0; i < pts.length - 1; i++) {
+      curvePath.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
+    }
+    this._pathCurve = curvePath;
 
     // ── Nexus ──
     const nexus = createNexus();
-    nexus.mesh.position.set(10.5, this._config.boardY + 0.3, -6);
+    nexus.mesh.position.set(12, this._config.boardY + 0.3, 5);
     sc.add(nexus.mesh);
     this._animFns.push(nexus);
     this._nexus = nexus;

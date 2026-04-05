@@ -105,6 +105,14 @@ function buildPathMesh(waypoints) {
   const pathH   = 0.02;   // thin surface decal — sits flush with board top
   const pathUp  = 0.31;   // board top is y=0.3; path centre just 1mm proud
 
+  // Shared material — created once, reused across segments and corners
+  const segMat = new THREE.MeshStandardMaterial({
+    map: pathTex, roughness: 0.52, metalness: 0.25,
+    color: 0x22304a,
+    emissive: new THREE.Color(0x331800), emissiveIntensity: 0.18,
+  });
+
+  // Straight segments
   for (let i = 0; i < waypoints.length - 1; i++) {
     const a = new THREE.Vector3(...waypoints[i]);
     const b = new THREE.Vector3(...waypoints[i + 1]);
@@ -116,17 +124,21 @@ function buildPathMesh(waypoints) {
     const segW = isH ? len : pathW;
     const segD = isH ? pathW : len;
 
-    // Slightly warm, raised path surface — no per-segment edge strips (they grid-clash at corners)
-    const segMat = new THREE.MeshStandardMaterial({
-      map: pathTex, roughness: 0.52, metalness: 0.25,
-      color: 0x22304a,
-      emissive: new THREE.Color(0x331800), emissiveIntensity: 0.18,
-    });
-    const seg    = new THREE.Mesh(new THREE.BoxGeometry(segW, pathH, segD), segMat);
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(segW, pathH, segD), segMat);
     seg.position.set(midX, pathUp, midZ);
     seg.receiveShadow = true;
     group.add(seg);
   }
+
+  // Square fill at every interior waypoint to close the corner gaps
+  for (let i = 1; i < waypoints.length - 1; i++) {
+    const wp = waypoints[i];
+    const corner = new THREE.Mesh(new THREE.BoxGeometry(pathW, pathH, pathW), segMat);
+    corner.position.set(wp[0], pathUp, wp[2]);
+    corner.receiveShadow = true;
+    group.add(corner);
+  }
+
   return group;
 }
 
@@ -431,11 +443,11 @@ export function createBoard(waypoints) {
     [-4.5,  4.0, 0x52c46a], [-3.5,  5.2, 0x4db86e], [-5.5,  3.0, 0x45b85e],
     [-3.0,  3.5, 0x60d474], [-4.0,  6.0, 0x52c46a],
     // Centre-right
-    [ 3.0,  2.5, 0x52c46a], [ 4.0, -2.5, 0x45b85e], [ 2.5, -3.5, 0x60d474],
+    [ 3.0,  2.5, 0x52c46a], [ 2.5, -2.5, 0x45b85e], [ 2.5, -3.5, 0x60d474],
     [ 3.8,  1.0, 0x4db86e],
     // Far-right top
-    [ 8.5,  4.0, 0x52c46a], [ 9.5,  2.5, 0x45b85e], [ 8.0,  5.0, 0x60d474],
-    [10.5,  4.0, 0x4db86e],
+    [ 8.5,  2.0, 0x52c46a], [ 9.5,  2.5, 0x45b85e], [ 8.0,  2.0, 0x60d474],
+    [10.5,  2.0, 0x4db86e],
     // Far-right bottom
     [ 8.5, -2.0, 0x52c46a], [ 9.5, -4.0, 0x45b85e], [10.0, -2.5, 0x4db86e],
   ].forEach(([cx, cz, hue]) => group.add(makeGrassTuft(cx, cz, hue)));
@@ -444,14 +456,14 @@ export function createBoard(waypoints) {
   [
     [-9.0,  5.0, 0x2d7838], [-10.0, -4.0, 0x336b3e],
     [-4.0,  5.5, 0x2e8040], [  3.5,  3.0, 0x2d7838],
-    [ 8.5,  4.5, 0x336b3e], [  9.0, -3.0, 0x2e8040],
+    [ 8.5,  2.5, 0x336b3e], [  9.0, -3.0, 0x2e8040],
   ].forEach(([cx, cz, hue]) => group.add(makeSmallBush(cx, cz, hue)));
 
   // Planter boxes: [cx, cz, rotY]
   [
     [-9.0,  3.0, 0.0],
     [-9.0, -3.0, 0.2],
-    [ 4.5,  0.0, Math.PI / 2],
+    [ 7.5,  0.0, Math.PI / 2],
     [-3.5,  4.5, 0.2],
     [ 9.0,  3.0, 0.0],
   ].forEach(([cx, cz, ry]) => group.add(makePlanterBox(cx, cz, ry)));

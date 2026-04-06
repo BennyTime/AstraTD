@@ -20,13 +20,13 @@ export function createNexus() {
   const group = new THREE.Group();
 
   // ── Materials ──────────────────────────────────────────────────────────
-  const baseMat    = new THREE.MeshStandardMaterial({ color: 0x0e1830, roughness: 0.5, metalness: 0.85 });
-  const ringMat    = new THREE.MeshStandardMaterial({ color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 1.0, roughness: 0.2, metalness: 0.6 });
-  const coreMat    = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: new THREE.Color(0x00e5ff), emissiveIntensity: 2.5, roughness: 0.0, metalness: 0.0 });
-  const shellMat   = new THREE.MeshStandardMaterial({ color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 0.5, transparent: true, opacity: 0.12, roughness: 0.0, side: THREE.FrontSide });
-  const antMat     = new THREE.MeshStandardMaterial({ color: 0x203050, roughness: 0.45, metalness: 0.9 });
-  const antTipMat  = new THREE.MeshStandardMaterial({ color: 0xff8c00, emissive: new THREE.Color(0xff8c00), emissiveIntensity: 1.5 });
-  const accentMat  = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: new THREE.Color(0xff6600), emissiveIntensity: 0.9, roughness: 0.3 });
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x0e1830, roughness: 0.5, metalness: 0.85 });
+  const ringMat = new THREE.MeshStandardMaterial({ color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 1.0, roughness: 0.2, metalness: 0.6 });
+  const coreMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: new THREE.Color(0x00e5ff), emissiveIntensity: 2.5, roughness: 0.0, metalness: 0.0 });
+  const shellMat = new THREE.MeshStandardMaterial({ color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 0.5, transparent: true, opacity: 0.12, roughness: 0.0, side: THREE.FrontSide });
+  const antMat = new THREE.MeshStandardMaterial({ color: 0x203050, roughness: 0.45, metalness: 0.9 });
+  const antTipMat = new THREE.MeshStandardMaterial({ color: 0xff8c00, emissive: new THREE.Color(0xff8c00), emissiveIntensity: 1.5 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: new THREE.Color(0xff6600), emissiveIntensity: 0.9, roughness: 0.3 });
 
   // ── Base pedestal (octagonal prism via CylinderGeometry with 8 sides) ──
   const base = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.35, 0.55, 8), baseMat);
@@ -55,7 +55,7 @@ export function createNexus() {
 
   const ring2Pivot = new THREE.Group();
   const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.045, 8, 48), ringMat);
-  ring2.rotation.x = Math.PI / 2;   // orthogonal ring
+  ring2.rotation.x = Math.PI / 2;
   ring2Pivot.add(ring2);
   ring2Pivot.position.y = 1.25;
   group.add(ring2Pivot);
@@ -102,16 +102,16 @@ export function createNexus() {
 
   // ── Explosion system ──────────────────────────────────────────────────
   const SHARD_COUNT = 60;
-  const shardGeo    = new THREE.IcosahedronGeometry(0.12, 0);
-  const shardMat    = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: new THREE.Color(0x00e5ff), emissiveIntensity: 2, transparent: true });
-  const shards      = [];
+  const shardGeo = new THREE.IcosahedronGeometry(0.12, 0);
+  const shardMat = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: new THREE.Color(0x00e5ff), emissiveIntensity: 2, transparent: true });
+  const shards = [];
   for (let i = 0; i < SHARD_COUNT; i++) {
     const s = new THREE.Mesh(shardGeo, shardMat.clone());
     s.position.set(0, 1.25, 0);
     s.visible = false;
     const theta = Math.random() * Math.PI * 2;
-    const phi   = Math.random() * Math.PI;
-    const spd   = 3 + Math.random() * 5;
+    const phi = Math.random() * Math.PI;
+    const spd = 3 + Math.random() * 5;
     s.userData.vel = new THREE.Vector3(
       Math.sin(phi) * Math.cos(theta) * spd,
       Math.cos(phi) * spd * 0.6 + 1.5,
@@ -127,15 +127,15 @@ export function createNexus() {
   }
 
   // ── State ─────────────────────────────────────────────────────────────
-  let state       = 'idle';   // 'idle' | 'hit' | 'explode'
-  let hitTimer    = 0;
+  let state = 'idle'; // 'idle' | 'hit' | 'explode'
+  let hitTimer = 0;
   let explodeTime = 0;
   let explodeDone = false;
-  let t           = 0;
+  let t = 0;
 
   // ── Public API ────────────────────────────────────────────────────────
   function triggerHit() {
-    state    = 'hit';
+    state = 'hit';
     hitTimer = 0.35;
     coreLight.color.set(0xff2020);
     coreMat.color.set(0xff2020);
@@ -143,15 +143,14 @@ export function createNexus() {
   }
 
   function triggerExplode(onDone) {
-    state       = 'explode';
+    state = 'explode';
     explodeTime = 0;
     explodeDone = false;
     shards.forEach(s => { s.visible = true; s.position.set(0, 1.25, 0); s.material.opacity = 1; });
-    core.visible   = false;
-    shell.visible  = false;
+    core.visible = false;
+    shell.visible = false;
     ring1Pivot.visible = false;
     ring2Pivot.visible = false;
-    // big flash
     coreLight.intensity = 12;
     coreLight.color.set(0xffffff);
     group.userData._explodeDone = onDone;
@@ -199,14 +198,13 @@ export function createNexus() {
 
       shards.forEach(s => {
         s.position.addScaledVector(s.userData.vel, delta);
-        s.userData.vel.y -= delta * 6; // gravity
+        s.userData.vel.y -= delta * 6;
         s.rotation.x += s.userData.rot.x * delta;
         s.rotation.y += s.userData.rot.y * delta;
         s.rotation.z += s.userData.rot.z * delta;
         s.material.opacity = Math.max(0, 1 - explodeTime / 2.5);
       });
 
-      // Fade out light
       coreLight.intensity = Math.max(0, 12 - explodeTime * 8);
 
       if (explodeTime > 2.5 && !explodeDone) {

@@ -22,16 +22,16 @@ import * as THREE from 'three';
  *   phase  – initial orbit phase (default 0)
  */
 export function createFloatingCrystal({
-  color   = 0xcc44aa,
-  scale   = 1,
-  orbitR  = 0,
-  orbitY  = 3,
-  phase   = 0,
+  color = 0xcc44aa,
+  scale = 1,
+  orbitR = 0,
+  orbitY = 3,
+  phase = 0,
 } = {}) {
   const group = new THREE.Group();
   const inner = new THREE.Group();
 
-  const emColor    = new THREE.Color(color);
+  const emColor = new THREE.Color(color);
   // Outer shell: lighten the base colour so it looks like frosted translucent facets
   const outerColor = new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.42);
   // Core: darken + shift toward blue-violet for the deep inner colour
@@ -65,8 +65,7 @@ export function createFloatingCrystal({
   // OctahedronGeometry detail=1 → 32 flat triangular faces, perfect gem-cut look
   const bodyGeo = new THREE.OctahedronGeometry(0.38, 1);
 
-  // Outer mesh: elongated on Y (tall bipyramid), slight non-uniform scale for
-  // a natural asymmetry, small fixed rotation so it doesn't look axis-aligned
+  // Outer mesh: elongated on Y (tall bipyramid) and slightly rotated for visual interest
   const outerMesh = new THREE.Mesh(bodyGeo, outerMat);
   outerMesh.scale.set(1.0, 2.15, 0.85);
   outerMesh.rotation.set(0.05, 0.32, 0.07);
@@ -79,12 +78,10 @@ export function createFloatingCrystal({
   inner.add(coreMesh);
 
   // Accent shards – thin, tilted OctahedronGeometry(r, 0) slabs representing
-  // the protruding facet planes visible on the surface of real cut gems
-  // [rotZ, rotX, scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ]
   const accentDefs = [
-    [ 0.38,  0.14, 0.30, 1.52, 0.18,  0.23,  0.10,  0.06],
-    [-0.30,  0.22, 0.28, 1.38, 0.16, -0.20,  0.05,  0.10],
-    [ 0.16,  0.32, 0.24, 1.18, 0.14,  0.08, -0.05, -0.20],
+    [ 0.38, 0.14, 0.30, 1.52, 0.18, 0.23, 0.10, 0.06],
+    [-0.30, 0.22, 0.28, 1.38, 0.16, -0.20, 0.05, 0.10],
+    [ 0.16, 0.32, 0.24, 1.18, 0.14, 0.08, -0.05, -0.20],
   ];
   accentDefs.forEach(([rz, rx, sx, sy, sz, ox, oy, oz]) => {
     const accent = new THREE.Mesh(
@@ -107,13 +104,10 @@ export function createFloatingCrystal({
   });
 
   // Point light inside – casts coloured light onto nearby surfaces
-  // High range so the glow visibly pools on the board/ground below
   const light = new THREE.PointLight(color, 3.2, 16 * scale);
   inner.add(light);
 
   // ── Bright inner core sphere ──────────────────────────────────────────
-  // A small fully-opaque sphere at the centre that acts as the visible
-  // energy source — much brighter and tighter than the BackSide shell.
   const coreSphereGeo = new THREE.SphereGeometry(0.10, 10, 10);
   const coreSphereMat = new THREE.MeshStandardMaterial({
     color: new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.55),
@@ -155,17 +149,15 @@ export function createFloatingCrystal({
     // Breathing emissive pulse
     const pulse = 0.48 + Math.sin(t * 2.0) * 0.22;
     outerMat.emissiveIntensity = pulse;
-    coreMat.emissiveIntensity  = 2.5 + Math.sin(t * 2.0) * 0.75;
+    coreMat.emissiveIntensity = 2.5 + Math.sin(t * 2.0) * 0.75;
     light.intensity = 2.8 + Math.sin(t * 2.0) * 1.0;
 
     // Core sphere: gentle base breath + periodic hard flare
-    // Flare fires on a ~4s cycle (per-crystal offset via phase).
-    // flareCurve spikes sharply to 1 then decays fast (x² decay).
-    const flareT     = ((t + phase * 0.7) % 4.0) / 4.0;   // 0‥1 over 4 s
-    const flareRaw   = Math.max(0, 1 - Math.abs(flareT - 0.08) / 0.08);  // spike at 8% of cycle
-    const flareCurve = flareRaw * flareRaw;                // quadratic falloff
-    const basePulse  = 4.5 + Math.sin(t * 2.0 + 0.4) * 1.2;
-    const flareBoost = flareCurve * 28;                    // 0 normally, up to 28 on spike
+    const flareT = ((t + phase * 0.7) % 4.0) / 4.0;
+    const flareRaw = Math.max(0, 1 - Math.abs(flareT - 0.08) / 0.08);
+    const flareCurve = flareRaw * flareRaw;
+    const basePulse = 4.5 + Math.sin(t * 2.0 + 0.4) * 1.2;
+    const flareBoost = flareCurve * 28;
     coreSphereMat.emissiveIntensity = basePulse + flareBoost;
     coreLight.intensity = (4.0 + Math.sin(t * 2.0 + 0.4) * 1.5) + flareCurve * 18;
   }
@@ -183,15 +175,15 @@ export function createCrystalCluster(opts = {}) {
 
   // Pink/purple/cyan gem palette matching the reference
   const configs = [
-    { color: 0xcc44aa, scale: 1.0,  orbitR: 0, orbitY: 0,    phase: 0 },
+    { color: 0xcc44aa, scale: 1.0, orbitR: 0, orbitY: 0, phase: 0 },
     { color: 0x8844ff, scale: 0.65, orbitR: 0, orbitY: -0.3, phase: 1.2 },
-    { color: 0x44aaff, scale: 0.5,  orbitR: 0, orbitY: 0,    phase: 2.4 },
-    { color: 0xee66cc, scale: 0.4,  orbitR: 0, orbitY: 0.2,  phase: 3.6 },
+    { color: 0x44aaff, scale: 0.5, orbitR: 0, orbitY: 0, phase: 2.4 },
+    { color: 0xee66cc, scale: 0.4, orbitR: 0, orbitY: 0.2, phase: 3.6 },
   ];
   const offsets = [[0, 0], [0.55, 0.2], [-0.45, 0.3], [0.15, -0.5]];
 
   configs.forEach((cfg, i) => {
-    const c = createFloatingCrystal({ ...cfg, ...opts });
+    const c = createFloatingCrystal({ cfg, opts });
     c.mesh.position.set(offsets[i][0], 0, offsets[i][1]);
     group.add(c.mesh);
     updateFns.push(c.update);

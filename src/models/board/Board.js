@@ -14,17 +14,17 @@ function buildBoardTexture() {
 
   // Rich organic green gradient from centre outward
   const g = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size * 0.52);
-  g.addColorStop(0,    'rgba(52, 118, 64, 0.88)');
+  g.addColorStop(0, 'rgba(52, 118, 64, 0.88)');
   g.addColorStop(0.35, 'rgba(34,  88, 44, 0.65)');
   g.addColorStop(0.65, 'rgba(16,  40, 20, 0.35)');
-  g.addColorStop(1,    'rgba(0,    0,  0, 0.00)');
+  g.addColorStop(1, 'rgba(0,    0,  0, 0.00)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, size, size);
 
   // Warm amber undertone near centre — the "golden light coming through glass" feel
   const ag = ctx.createRadialGradient(size/2, size/2, 0, size/2, size/2, size * 0.30);
-  ag.addColorStop(0,   'rgba(120, 80, 20, 0.22)');
-  ag.addColorStop(1,   'rgba(0,   0,  0, 0.00)');
+  ag.addColorStop(0, 'rgba(120, 80, 20, 0.22)');
+  ag.addColorStop(1, 'rgba(0,   0,  0, 0.00)');
   ctx.fillStyle = ag;
   ctx.fillRect(0, 0, size, size);
 
@@ -96,16 +96,16 @@ function buildPathTexture() {
   return tex;
 }
 
-// ─── Path geometry (unchanged) ───────────────────────────────────────────────
+// ─── Path geometry ─────────────────────────────────────────────────────────
 
 function buildPathMesh(waypoints) {
-  const group   = new THREE.Group();
+  const group = new THREE.Group();
   const pathTex = buildPathTexture();
-  const pathW   = 2.2;
-  const pathH   = 0.02;   // thin surface decal — sits flush with board top
-  const pathUp  = 0.31;   // board top is y=0.3; path centre just 1mm proud
+  const pathW = 2.2;
+  const pathH = 0.02;
+  const pathUp = 0.31;   // board top is y=0.3, so this gives a tiny gap to prevent z-fighting
 
-  // Shared material — created once, reused across segments and corners
+  // Shared material
   const segMat = new THREE.MeshStandardMaterial({
     map: pathTex, roughness: 0.52, metalness: 0.25,
     color: 0x22304a,
@@ -116,11 +116,11 @@ function buildPathMesh(waypoints) {
   for (let i = 0; i < waypoints.length - 1; i++) {
     const a = new THREE.Vector3(...waypoints[i]);
     const b = new THREE.Vector3(...waypoints[i + 1]);
-    const dir  = new THREE.Vector3().subVectors(b, a);
-    const len  = dir.length();
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const len = dir.length();
     const midX = (a.x + b.x) / 2;
     const midZ = (a.z + b.z) / 2;
-    const isH  = Math.abs(dir.z) < 0.001;
+    const isH = Math.abs(dir.z) < 0.001;
     const segW = isH ? len : pathW;
     const segD = isH ? pathW : len;
 
@@ -150,14 +150,14 @@ function makeGrassTuft(cx, cz, hue = 0x52c46a) {
   const m = new THREE.MeshStandardMaterial({ color: hue, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide });
   // [dx, dz, tiltZ, height, rotY]
   const blades = [
-    [ 0.000,  0.000,  0.00,  0.14,  0.00],
-    [ 0.080,  0.060,  0.28,  0.16,  0.28],
-    [-0.070,  0.085, -0.22,  0.11, -0.18],
-    [ 0.100, -0.040, -0.38,  0.18,  0.50],
-    [-0.090, -0.075,  0.48,  0.12, -0.45],
-    [ 0.040,  0.110,  0.75,  0.15,  0.80],
-    [-0.055, -0.095,  1.18,  0.13, -0.72],
-    [ 0.105,  0.030,  1.52,  0.10,  1.10],
+    [ 0.000, 0.000, 0.00, 0.14, 0.00],
+    [ 0.080, 0.060, 0.28, 0.16, 0.28],
+    [-0.070, 0.085, -0.22, 0.11, -0.18],
+    [ 0.100, -0.040, -0.38, 0.18, 0.50],
+    [-0.090, -0.075, 0.48, 0.12, -0.45],
+    [ 0.040, 0.110, 0.75, 0.15, 0.80],
+    [-0.055, -0.095, 1.18, 0.13, -0.72],
+    [ 0.105, 0.030, 1.52, 0.10, 1.10],
   ];
   blades.forEach(([dx, dz, rz, h, ry]) => {
     const blade = new THREE.Mesh(new THREE.CylinderGeometry(0, 0.022, h, 3), m);
@@ -174,19 +174,19 @@ function makeSmallBush(cx, cz, hue = 0x2d7838) {
   const group = new THREE.Group();
   // Slightly darker variant for depth blobs
   const darkHue = (hue & 0xfefefe) >>> 1;
-  const lm  = new THREE.MeshStandardMaterial({ color: hue,     roughness: 0.88, metalness: 0.0 });
+  const lm = new THREE.MeshStandardMaterial({ color: hue,     roughness: 0.88, metalness: 0.0 });
   const lm2 = new THREE.MeshStandardMaterial({ color: darkHue, roughness: 0.90, metalness: 0.0 });
-  const sm  = new THREE.MeshStandardMaterial({ color: 0x3a2008, roughness: 1.0,  metalness: 0.0 });
+  const sm = new THREE.MeshStandardMaterial({ color: 0x3a2008, roughness: 1.0,  metalness: 0.0 });
   const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.065, 0.28, 5), sm);
   stem.position.set(cx, 0.44, cz);
   group.add(stem);
   // [dx, dy, dz, radius, mat]
   [
-    [0.00,  0.24, 0.00, 0.28, lm ],
-    [0.18,  0.14, 0.10, 0.21, lm2],
-    [-0.15, 0.13, -0.10, 0.20, lm ],
-    [0.03,  0.07, 0.18, 0.17, lm2],
-    [-0.08, 0.30, 0.06, 0.15, lm ],
+    [0.00, 0.24, 0.00, 0.28, lm ],
+    [0.18, 0.14, 0.10, 0.21, lm2],
+    [-0.15, 0.13, -0.10, 0.20, lm],
+    [0.03, 0.07, 0.18, 0.17, lm2],
+    [-0.08, 0.30, 0.06, 0.15, lm],
   ].forEach(([dx, dy, dz, r, mat]) => {
     const b = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), mat);
     b.position.set(cx + dx, 0.55 + dy, cz + dz);
@@ -203,9 +203,9 @@ const _planterBoxColors = [0x1e5e50, 0x7a2e10, 0x2a4a7a, 0x5a3a10, 0x1a4a2a];
 function makePlanterBox(cx, cz, rotY = 0) {
   const group = new THREE.Group();
   const boxColor = _planterBoxColors[(_planterIdx++) % _planterBoxColors.length];
-  const boxMat  = new THREE.MeshStandardMaterial({ color: boxColor, roughness: 0.50, metalness: 0.55 });
+  const boxMat = new THREE.MeshStandardMaterial({ color: boxColor, roughness: 0.50, metalness: 0.55 });
   const soilMat = new THREE.MeshStandardMaterial({ color: 0x3a2210, roughness: 1.0,  metalness: 0.0 });
-  const sprigMat= new THREE.MeshStandardMaterial({ color: 0x6ae870, roughness: 0.75, metalness: 0.0 });
+  const sprigMat = new THREE.MeshStandardMaterial({ color: 0x6ae870, roughness: 0.75, metalness: 0.0 });
 
   const box = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.18, 0.75), boxMat);
   box.position.set(cx, 0.39, cz);
@@ -253,17 +253,17 @@ function buildGreenhouseFrame() {
   });
 
   const wallH  = 2.2;
-  const baseY  = 0.3;
-  const colR   = 0.058;  // thicker so they read clearly
-  const colXs  = [-10, -4, 2, 8];
+  const baseY = 0.3;
+  const colR = 0.058;  // thicker so they read clearly
+  const colXs = [-10, -4, 2, 8];
   const vineHues = [0x2d8038, 0x3a9848, 0x22782c, 0x50aa60, 0x5abc68];
 
   const panelSegs = [
     { x1: -12, x2: -10 },
-    { x1: -10, x2:  -4 },
-    { x1:  -4, x2:   2 },
-    { x1:   2, x2:   8 },
-    { x1:   8, x2:  12 },
+    { x1: -10, x2: -4 },
+    { x1: -4, x2: 2 },
+    { x1: 2, x2: 8 },
+    { x1: 8, x2: 12 },
   ];
 
   [-7.8, 7.8].forEach(wz => {
@@ -292,8 +292,8 @@ function buildGreenhouseFrame() {
         const vx   = cx + (s - (numStrands - 1) / 2) * 0.20;
         const vLen = 0.50 + (s % 3) * 0.32;   // 0.5 – 1.14 units hang down
         const topY = baseY + wallH - 0.06;
-        const vh   = vineHues[(ci * 3 + s) % vineHues.length];
-        const vm   = new THREE.MeshStandardMaterial({ color: vh, roughness: 0.92, metalness: 0.0 });
+        const vh = vineHues[(ci * 3 + s) % vineHues.length];
+        const vm = new THREE.MeshStandardMaterial({ color: vh, roughness: 0.92, metalness: 0.0 });
 
         const strand = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.007, vLen, 3), vm);
         strand.position.set(vx, topY - vLen / 2, wz + (s % 2 - 0.5) * 0.05);
@@ -302,10 +302,10 @@ function buildGreenhouseFrame() {
         // Leaf blobs along strand
         const numLeaves = 2 + (s % 2);
         for (let l = 0; l < numLeaves; l++) {
-          const ly  = topY - (l + 0.7) * (vLen / (numLeaves + 0.5));
-          const lr  = 0.042 + (l % 2) * 0.025;
-          const lh  = vineHues[(ci + s + l + 1) % vineHues.length];
-          const lm  = new THREE.MeshStandardMaterial({ color: lh, roughness: 0.88, metalness: 0.0 });
+          const ly = topY - (l + 0.7) * (vLen / (numLeaves + 0.5));
+          const lr = 0.042 + (l % 2) * 0.025;
+          const lh = vineHues[(ci + s + l + 1) % vineHues.length];
+          const lm = new THREE.MeshStandardMaterial({ color: lh, roughness: 0.88, metalness: 0.0 });
           const leaf = new THREE.Mesh(new THREE.SphereGeometry(lr, 5, 4), lm);
           leaf.position.set(
             vx + (l % 2 - 0.5) * 0.10,
@@ -341,7 +341,7 @@ function buildGreenhouseFrame() {
  * @returns {{ mesh: THREE.Group, update: (delta:number)=>void }}
  */
 export function createBoard(waypoints) {
-  const group    = new THREE.Group();
+  const group = new THREE.Group();
   const boardTex = buildBoardTexture();
   const W = 24, H = 0.6, D = 16;
 
@@ -357,10 +357,10 @@ export function createBoard(waypoints) {
   const edgeMat = new THREE.MeshStandardMaterial({ color: 0x071008, roughness: 0.7, metalness: 0.6 });
   const bevelH  = 0.18;
   [
-    { sx: W - 0.2, sz: 0.25, px: 0,         pz:  D/2 - 0.12 },
-    { sx: W - 0.2, sz: 0.25, px: 0,         pz: -D/2 + 0.12 },
-    { sx: 0.25,    sz: D,    px:  W/2 - 0.12, pz: 0 },
-    { sx: 0.25,    sz: D,    px: -W/2 + 0.12, pz: 0 },
+    { sx: W - 0.2, sz: 0.25, px: 0, pz: D/2 - 0.12 },
+    { sx: W - 0.2, sz: 0.25, px: 0, pz: -D/2 + 0.12 },
+    { sx: 0.25, sz: D, px: W/2 - 0.12, pz: 0 },
+    { sx: 0.25, sz: D, px: -W/2 + 0.12, pz: 0 },
   ].forEach(({ sx, sz, px, pz }) => {
     const m = new THREE.Mesh(new THREE.BoxGeometry(sx, bevelH, sz), edgeMat);
     m.position.set(px, -H/2 - bevelH/2, pz);
@@ -378,10 +378,10 @@ export function createBoard(waypoints) {
     color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 0.65, roughness: 0.20,
   });
   [
-    { sx: W,    sz: 0.05, px: 0,     pz:  D/2, m: greenAccentMat },
-    { sx: W,    sz: 0.05, px: 0,     pz: -D/2, m: greenAccentMat },
-    { sx: 0.05, sz: D,    px:  W/2,  pz: 0,    m: cyanAccentMat  },
-    { sx: 0.05, sz: D,    px: -W/2,  pz: 0,    m: cyanAccentMat  },
+    { sx: W, sz: 0.05, px: 0, pz:  D/2, m: greenAccentMat },
+    { sx: W, sz: 0.05, px: 0, pz: -D/2, m: greenAccentMat },
+    { sx: 0.05, sz: D, px: W/2, pz: 0, m: cyanAccentMat  },
+    { sx: 0.05, sz: D, px: -W/2, pz: 0, m: cyanAccentMat  },
   ].forEach(({ sx, sz, px, pz, m }) => {
     const strip = new THREE.Mesh(new THREE.BoxGeometry(sx, 0.08, sz), m);
     strip.position.set(px, H/2 + 0.04, pz);
@@ -434,45 +434,44 @@ export function createBoard(waypoints) {
   // Grass tufts: [cx, cz, hue]
   [
     // Far-left top
-    [-9.5,  4.5, 0x52c46a], [-10.2,  3.0, 0x45b85e], [-8.5,  5.5, 0x60d474],
-    [-10.5,  5.8, 0x4cb968], [-8.0,  2.5, 0x58cc72],
+    [-9.5, 4.5, 0x52c46a], [-10.2, 3.0, 0x45b85e], [-8.5, 5.5, 0x60d474],
+    [-10.5, 5.8, 0x4cb968], [-8.0, 2.5, 0x58cc72],
     // Far-left bottom
     [-9.5, -4.5, 0x52c46a], [-10.2, -3.0, 0x45b85e], [-8.5, -5.5, 0x60d474],
     [-10.5, -5.8, 0x4cb968],
     // Left-centre top
-    [-4.5,  4.0, 0x52c46a], [-3.5,  5.2, 0x4db86e], [-5.5,  3.0, 0x45b85e],
-    [-3.0,  3.5, 0x60d474], [-4.0,  6.0, 0x52c46a],
+    [-4.5, 4.0, 0x52c46a], [-3.5, 5.2, 0x4db86e], [-5.5, 3.0, 0x45b85e],
+    [-3.0, 3.5, 0x60d474], [-4.0, 6.0, 0x52c46a],
     // Centre-right
-    [ 3.0,  2.5, 0x52c46a], [ 2.5, -2.5, 0x45b85e], [ 2.5, -3.5, 0x60d474],
-    [ 3.8,  1.0, 0x4db86e],
+    [3.0, 2.5, 0x52c46a], [2.5, -2.5, 0x45b85e], [2.5, -3.5, 0x60d474],
+    [3.8, 1.0, 0x4db86e],
     // Far-right top
-    [ 8.5,  2.0, 0x52c46a], [ 9.5,  2.5, 0x45b85e], [ 8.0,  2.0, 0x60d474],
-    [10.5,  2.0, 0x4db86e],
+    [8.5, 2.0, 0x52c46a], [9.5, 2.5, 0x45b85e], [8.0, 2.0, 0x60d474],
+    [10.5, 2.0, 0x4db86e],
     // Far-right bottom
-    [ 8.5, -2.0, 0x52c46a], [ 9.5, -4.0, 0x45b85e], [10.0, -2.5, 0x4db86e],
+    [8.5, -2.0, 0x52c46a], [9.5, -4.0, 0x45b85e], [10.0, -2.5, 0x4db86e],
   ].forEach(([cx, cz, hue]) => group.add(makeGrassTuft(cx, cz, hue)));
 
   // Small bushes: [cx, cz, hue]
   [
-    [-9.0,  5.0, 0x2d7838], [-10.0, -4.0, 0x336b3e],
-    [-4.0,  5.5, 0x2e8040], [  3.5,  3.0, 0x2d7838],
-    [ 8.5,  2.5, 0x336b3e], [  9.0, -3.0, 0x2e8040],
+    [-9.0, 5.0, 0x2d7838], [-10.0, -4.0, 0x336b3e],
+    [-4.0, 5.5, 0x2e8040], [3.5, 3.0, 0x2d7838],
+    [8.5, 2.5, 0x336b3e], [9.0, -3.0, 0x2e8040],
   ].forEach(([cx, cz, hue]) => group.add(makeSmallBush(cx, cz, hue)));
 
   // Planter boxes: [cx, cz, rotY]
   [
-    [-9.0,  3.0, 0.0],
+    [-9.0, 3.0, 0.0],
     [-9.0, -3.0, 0.2],
-    [ 7.5,  0.0, Math.PI / 2],
-    [-3.5,  4.5, 0.2],
-    [ 9.0,  3.0, 0.0],
+    [ 7.5, 0.0, Math.PI / 2],
+    [-3.5, 4.5, 0.2],
+    [ 9.0, 3.0, 0.0],
   ].forEach(([cx, cz, ry]) => group.add(makePlanterBox(cx, cz, ry)));
 
   // ── Greenhouse glass frame (N/S walls) ────────────────────────────────────
   group.add(buildGreenhouseFrame());
 
   // ── Lighting ──────────────────────────────────────────────────────────────
-  // Warm amber — "golden sunlight through greenhouse glass"
   const amberGlow  = new THREE.PointLight(0xffaa44, 2.2, 28);
   amberGlow.position.set(-4, 2.2, 1);
   group.add(amberGlow);
@@ -496,11 +495,11 @@ export function createBoard(waypoints) {
   function update(delta) {
     t += delta;
     const pulse = 0.82 + Math.sin(t * 1.4) * 0.28;
-    cyanAccentMat.emissiveIntensity  = pulse * 2.0;
+    cyanAccentMat.emissiveIntensity = pulse * 2.0;
     greenAccentMat.emissiveIntensity = 1.60 + Math.sin(t * 1.0 + 0.8) * 0.50;
-    glow1.intensity      = 1.20 + Math.sin(t * 1.2)        * 0.30;
-    greenGlow.intensity  = 1.90 + Math.sin(t * 0.85 + 1.0) * 0.45;
-    amberGlow.intensity  = 1.80 + Math.sin(t * 0.70 + 2.0) * 0.45;
+    glow1.intensity = 1.20 + Math.sin(t * 1.2) * 0.30;
+    greenGlow.intensity = 1.90 + Math.sin(t * 0.85 + 1.0) * 0.45;
+    amberGlow.intensity = 1.80 + Math.sin(t * 0.70 + 2.0) * 0.45;
     amberGlow2.intensity = 1.40 + Math.sin(t * 0.90 + 0.5) * 0.35;
   }
 

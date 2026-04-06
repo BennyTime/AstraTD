@@ -243,5 +243,5 @@ export function createLaserTurret() {
 
   triggerSpawn(); // start spawn immediately
 
-  return { mesh: group, update, triggerSpawn, triggerShoot, trackTarget };
+  return { name: 'LASER TURRET', mesh: group, update, triggerSpawn, triggerShoot, trackTarget };
 }

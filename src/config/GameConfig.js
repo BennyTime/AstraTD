@@ -8,20 +8,20 @@ export const GameConfig = {
 
   // Path waypoints (XZ on the board, Y = boardY + tileHeight)
   pathWaypoints: [
-    [-11, 0,  0],
-    [ -4, 0,  0],
-    [ -4, 0, -5],
-    [  5, 0, -5],
-    [  5, 0,  5],
-    [ 11, 0,  5],
+    [-11, 0, 0],
+    [-4, 0, 0],
+    [-4, 0, -5],
+    [5, 0, -5],
+    [5, 0, 5],
+    [11, 0, 5],
   ],
 
   // Waves
-  totalWaves:         5,
-  waveCooldown:    5000,
-  enemiesPerWave:     6,
+  totalWaves: 5,
+  waveCooldown: 5000,
+  enemiesPerWave: 6,
   enemiesPerWaveGrow: 2,
-  spawnInterval:   1200,
+  spawnInterval: 1200,
   
   // Economy
   startingGold: 200,
@@ -34,9 +34,9 @@ export const GameConfig = {
   laserTowerCost: 100,
   laserTowerRange: 6,
   laserTowerDamage: 15,
-  laserTowerFireRate: 1.0, // shots per second
+  laserTowerFireRate: 1.0,
 
   // Enemies
   enemyBaseSpeed: 3.5,
-  enemyBaseHP:    60,
+  enemyBaseHP: 60,
 };

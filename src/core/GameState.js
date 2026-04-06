@@ -7,13 +7,13 @@ export class GameState {
 
   reset() {
     const c = this.config;
-    this.hp          = c.nexusMaxHP;
-    this.gold        = c.startingGold;
-    this.wave        = 0;
+    this.hp = c.nexusMaxHP;
+    this.gold = c.startingGold;
+    this.wave = 0;
     this.enemiesLeft = 0;
-    this.phase       = 'menu';   // 'menu' | 'build' | 'combat' | 'gameover' | 'victory'
-    this.score       = 0;
-    this._listeners  = {};
+    this.phase = 'menu';   // 'menu' | 'build' | 'combat' | 'gameover' | 'victory'
+    this.score = 0;
+    this._listeners = {};
   }
 
   on(event, fn) {

@@ -34,7 +34,7 @@ export class NavigationMenu {
         <div class="nav-rules">
           <p><span class="key">SPACE</span> Start next wave</p>
           <p><span class="key">CLICK</span> Place laser turret on board</p>
-          <p><span class="key">R</span> Remove selected turret (refund 50%)</p>
+          <p>Clicking the turret opens a menu to change targeting or sell it.</p>
           <p>Enemies follow the <span class="hl">orange path</span> to the <span class="hl">Nexus</span>.</p>
           <p>Each enemy that reaches the Nexus deals damage.</p>
           <p>Kill enemies to earn <span class="hl gold">gold</span> and buy more towers.</p>

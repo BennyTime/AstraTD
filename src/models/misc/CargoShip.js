@@ -49,13 +49,13 @@ export function createCargoShip() {
   const group = new THREE.Group();
 
   // ── Materials ──────────────────────────────────────────────────────────
-  const hullMat     = new THREE.MeshStandardMaterial({ color: 0x1c1028, roughness: 0.55, metalness: 0.80 });
-  const armorMat    = new THREE.MeshStandardMaterial({ color: 0x2a1838, roughness: 0.50, metalness: 0.75 });
-  const accentMat   = new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: new THREE.Color(0xaa00ff), emissiveIntensity: 1.2, roughness: 0.25, metalness: 0.5 });
+  const hullMat = new THREE.MeshStandardMaterial({ color: 0x1c1028, roughness: 0.55, metalness: 0.80 });
+  const armorMat = new THREE.MeshStandardMaterial({ color: 0x2a1838, roughness: 0.50, metalness: 0.75 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0xaa00ff, emissive: new THREE.Color(0xaa00ff), emissiveIntensity: 1.2, roughness: 0.25, metalness: 0.5 });
   const thrusterMat = new THREE.MeshStandardMaterial({ color: 0x660099, emissive: new THREE.Color(0x9900ff), emissiveIntensity: 2.0, roughness: 0.2 });
-  const windowMat   = new THREE.MeshStandardMaterial({ color: 0x90e0ff, emissive: new THREE.Color(0x40c0ff), emissiveIntensity: 1.2, transparent: true, opacity: 0.85 });
-  const wingMat     = new THREE.MeshStandardMaterial({ color: 0x16091f, roughness: 0.62, metalness: 0.78 });
-  const bayMat      = new THREE.MeshStandardMaterial({ color: 0x0e0818, roughness: 0.85, metalness: 0.4 });
+  const windowMat = new THREE.MeshStandardMaterial({ color: 0x90e0ff, emissive: new THREE.Color(0x40c0ff), emissiveIntensity: 1.2, transparent: true, opacity: 0.85 });
+  const wingMat = new THREE.MeshStandardMaterial({ color: 0x16091f, roughness: 0.62, metalness: 0.78 });
+  const bayMat = new THREE.MeshStandardMaterial({ color: 0x0e0818, roughness: 0.85, metalness: 0.4 });
 
   // All emissive exhaust cones collected here for pulsing in update()
   const thrusterMeshes = [];
@@ -71,14 +71,12 @@ export function createCargoShip() {
   group.add(spine);
 
   // ── Nose ──────────────────────────────────────────────────────────────
-  // Slab is shifted so its back face (2.95-0.75=2.2) sits inside the fuselage (front=2.4),
-  // eliminating the gap. Z widened to 2.6 to closely match fuselage width (2.8).
   const noseSlab = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.1, 2.6), hullMat);
   noseSlab.position.set(2.95, 0, 0);
   noseSlab.castShadow = true;
   group.add(noseSlab);
 
-  // Narrow wedge tip — back face at 3.625, overlaps noseSlab front (3.7)
+  // Narrow wedge tip — back face at 3.625, overlaps noseSlab front
   const noseCap = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.7, 1.5), armorMat);
   noseCap.position.set(3.85, -0.05, 0);
   group.add(noseCap);
@@ -124,14 +122,13 @@ export function createCargoShip() {
 
   // ── Wings ──────────────────────────────────────────────────────────────
   [1, -1].forEach(sign => {
-    // Thick root slab — shifted inward so inner edge (±1.375) overlaps fuselage (±1.4)
     const wingRoot = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.22, 0.95), wingMat);
     wingRoot.position.set(-0.55, -0.14, sign * 1.85);
     wingRoot.rotation.z = sign * 0.1;
     wingRoot.castShadow = true;
     group.add(wingRoot);
 
-    // Thinner tapered tip — inner edge overlaps wingRoot outer edge (±2.325)
+    // Thinner tapered tip — inner edge overlaps wingRoot outer edge
     const wingTip = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.11, 0.55), wingMat);
     wingTip.position.set(-0.85, -0.27, sign * 2.75);
     wingTip.rotation.z = sign * 0.18;
@@ -143,7 +140,7 @@ export function createCargoShip() {
     wStripe.position.set(-0.6, 0.02, sign * 1.85);
     group.add(wStripe);
 
-    // Wing-tip nacelle pod — butted flush against wing tip outer edge (±3.025 + r 0.24 = ±3.27)
+    // Wing-tip nacelle pod — butted flush against wing tip outer edge
     const nacelle = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 1.55, 10), hullMat);
     nacelle.rotation.z = Math.PI / 2;
     nacelle.position.set(-0.8, -0.28, sign * 3.27);
@@ -234,7 +231,6 @@ export function createCargoShip() {
   group.add(stbdNav);
 
   // ── Beacon — sits on top of the vertical fin tip ─────────────────────
-  // fin centre (-1.55, 1.12), half-height 0.375 → fin top ≈ 1.495
   const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.095, 8, 8), accentMat);
   beacon.position.set(-1.55, 1.60, 0);
   group.add(beacon);
@@ -243,7 +239,6 @@ export function createCargoShip() {
   group.add(beaconLight);
 
   // ── Transporter aperture ring (hull belly, always visible) ────────────
-  // Positioned flush with belly bottom (local y ≈ −0.74)
   const apertureMat = new THREE.MeshStandardMaterial({
     color: 0x330055, emissive: new THREE.Color(0x220033), emissiveIntensity: 0.0,
     roughness: 0.35, metalness: 0.85,
@@ -265,15 +260,13 @@ export function createCargoShip() {
   });
 
   // ── Transporter beam assembly ─────────────────────────────────────────
-  // The beam hangs from local Y ≈ -0.76 (hull belly) downward.
-  // BEAM_LENGTH covers the distance to the spawn-point ground below.
-  const BEAM_LENGTH  = 3.0;
-  const BEAM_TOP_Y   = -0.76;         // just below hull belly
+  const BEAM_LENGTH = 3.0;
+  const BEAM_TOP_Y = -0.76; // just below hull belly
   const BEAM_BOT_Y = BEAM_TOP_Y - BEAM_LENGTH;
   const BEAM_CTR_Y = BEAM_TOP_Y - BEAM_LENGTH * 0.5;
 
   const beamGroup = new THREE.Group();
-  beamGroup.position.set(-0.5, 0, 0);  // align with aperture X
+  beamGroup.position.set(-0.5, 0, 0);
   group.add(beamGroup);
 
   // Main beam column (tapered cylinder, open-ended)
@@ -294,7 +287,7 @@ export function createCargoShip() {
   beamGroup.add(beamColumn);
 
   // Scan rings (slide from top to bottom, loop continuously)
-  const N_RINGS   = 5;
+  const N_RINGS = 5;
   const scanRings = [];
   for (let i = 0; i < N_RINGS; i++) {
     const rm = new THREE.MeshStandardMaterial({
@@ -341,8 +334,8 @@ export function createCargoShip() {
   beamGroup.add(matRingMesh);
 
   // Sparkle particles (small spheres drifting along the beam)
-  const N_SPARKS  = 9;
-  const sparkMat  = new THREE.MeshStandardMaterial({
+  const N_SPARKS = 9;
+  const sparkMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: new THREE.Color(0xaaffff),
     emissiveIntensity: 4.0,
@@ -356,9 +349,9 @@ export function createCargoShip() {
     beamGroup.add(s);
     sparkles.push({
       mesh: s, mat: sm,
-      phase:  (i / N_SPARKS) * Math.PI * 2,
-      speed:  0.7 + Math.random() * 1.1,
-      angle:  Math.random() * Math.PI * 2,
+      phase: (i / N_SPARKS) * Math.PI * 2,
+      speed: 0.7 + Math.random() * 1.1,
+      angle: Math.random() * Math.PI * 2,
       radius: 0.06 + Math.random() * 0.22,
     });
   }
@@ -371,11 +364,11 @@ export function createCargoShip() {
   // ── State ─────────────────────────────────────────────────────────────
   let t = 0;
   let baseY = 0;
-  let bayState = 'closed';   // 'closed' | 'opening' | 'active' | 'closing'
+  let bayState = 'closed'; // 'closed' | 'opening' | 'active' | 'closing'
   let beamOpacity = 0;
 
   const BEAM_MAX_OPACITY = 0.82;
-  const FADE_SPEED = 2.2;   // opacity units per second
+  const FADE_SPEED = 2.2;
 
   function openBay()  { if (bayState === 'closed')  bayState = 'opening'; }
   function closeBay() { if (bayState === 'active' || bayState === 'opening') bayState = 'closing'; }

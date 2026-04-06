@@ -1,16 +1,17 @@
 import * as THREE from 'three';
-import { GameConfig }      from '../config/GameConfig.js';
-import { GameState }       from './GameState.js';
-import { HUD }             from '../ui/HUD.js';
-import { NavigationMenu }  from '../ui/NavigationMenu.js';
-import { createBoard }     from '../models/board/Board.js';
-import { createNexus }     from '../models/misc/Nexus.js';
+import { GameConfig } from '../config/GameConfig.js';
+import { GameState } from './GameState.js';
+import { HUD } from '../ui/HUD.js';
+import { NavigationMenu } from '../ui/NavigationMenu.js';
+import { createBoard } from '../models/board/Board.js';
+import { createNexus } from '../models/misc/Nexus.js';
 import { createCargoShip } from '../models/misc/CargoShip.js';
 import { createCrystalCluster, createFloatingCrystal } from '../models/misc/FloatingCrystal.js';
-import { createStarField }    from '../models/misc/StarField.js';
-import { createSun }          from '../models/misc/Sun.js';
+import { createStarField } from '../models/misc/StarField.js';
+import { createSun } from '../models/misc/Sun.js';
 import { createStandardEnemy } from '../models/enemies/StandardEnemy.js';
-import { createLaserTurret }   from '../models/towers/LaserTurret.js';
+import { createLaserTurret } from '../models/towers/LaserTurret.js';
+import { TurretMenu } from '../ui/TurretMenu.js';
 
 export class Game {
   constructor({ mountElement, hudElement }) {
@@ -18,9 +19,9 @@ export class Game {
     this._hudEl = hudElement;
     this._config = GameConfig;
     this._state = new GameState(GameConfig);
-    this._animFns = [];   // { update(delta) } entries
-    this._enemies = [];   // live enemy objects { mesh, update, hp, pathT, ... }
-    this._towers = [];   // placed towers
+    this._animFns = [];
+    this._enemies = [];
+    this._towers = [];
     this._clock = new THREE.Clock(false);
     this._spawnQueue = 0;
     this._spawnAccum = 0;
@@ -86,7 +87,7 @@ export class Game {
 
   _initCamera() {
     const cam = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 800);
-    cam.position.set(0, 18, 22);
+    cam.position.set(0, 12, 18);
     cam.lookAt(0, 0, 0);
     this._camera = cam;
   }
@@ -108,9 +109,9 @@ export class Game {
     const sun = createSun();
     sun.mesh.position.copy(sunPos);
     sc.add(sun.mesh);
-    sun.light.position.copy(sunPos);  // light shines from sun toward (0,0,0)
+    sun.light.position.copy(sunPos); // light shines from sun toward (0,0,0)
     sc.add(sun.light);
-    sc.add(sun.light.target);         // target stays at default (0,0,0)
+    sc.add(sun.light.target); // target stays at default (0,0,0)
     this._animFns.push(sun);
 
     // ── Board ──
@@ -124,7 +125,7 @@ export class Game {
     // Use a CurvePath of straight LineCurve3 segments so enemies follow
     // the exact axis-aligned polyline that is drawn on the board.
     const yOff = this._config.boardY + 0.6;
-    const pts  = wp.map(([x, y, z]) => new THREE.Vector3(x, yOff, z));
+    const pts = wp.map(([x, y, z]) => new THREE.Vector3(x, yOff, z));
     const curvePath = new THREE.CurvePath();
     for (let i = 0; i < pts.length - 1; i++) {
       curvePath.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
@@ -156,20 +157,20 @@ export class Game {
 
     // ── Floating crystals ──────────────────────────────────────────────
     const crystalDefs = [
-      { x: -13, z:  7,  scale: 0.9, color: 0xcc44aa, orbitY: 3.5, phase: 0 },
-      { x: -13, z: -7,  scale: 0.7, color: 0x8844ff, orbitY: 3.0, phase: 1 },
-      { x:  13, z:  7,  scale: 0.8, color: 0x44aaff, orbitY: 4.0, phase: 2 },
-      { x:  13, z: -7,  scale: 0.6, color: 0xee66cc, orbitY: 2.8, phase: 3 },
-      { x:   0, z:  11, scale: 1.0, color: 0xaa44ff, orbitY: 3.2, phase: 4 },
-      { x:   0, z: -11, scale: 0.75,color: 0x44aaff, orbitY: 3.8, phase: 5 },
-      { x: -22, z:  13, scale: 1.4, color: 0xcc44aa, orbitY: 5.0, phase: 6  },
-      { x: -20, z: -14, scale: 1.2, color: 0x8844ff, orbitY: 5.5, phase: 7  },
-      { x:  21, z:  13, scale: 1.3, color: 0xee66cc, orbitY: 4.8, phase: 8  },
-      { x:  23, z: -11, scale: 1.5, color: 0x44aaff, orbitY: 6.0, phase: 9  },
-      { x:  -5, z:  17, scale: 1.1, color: 0x8844ff, orbitY: 4.4, phase: 10 },
-      { x:   7, z: -17, scale: 1.3, color: 0xcc44aa, orbitY: 5.2, phase: 11 },
-      { x: -18, z:   1, scale: 1.0, color: 0xee66cc, orbitY: 4.0, phase: 12 },
-      { x:  17, z:   2, scale: 1.2, color: 0x44aaff, orbitY: 4.6, phase: 13 },
+      { x: -13, z: 7, scale: 0.9, color: 0xcc44aa, orbitY: 3.5, phase: 0 },
+      { x: -13, z: -7, scale: 0.7, color: 0x8844ff, orbitY: 3.0, phase: 1 },
+      { x: 13, z: 7, scale: 0.8, color: 0x44aaff, orbitY: 4.0, phase: 2 },
+      { x: 13, z: -7, scale: 0.6, color: 0xee66cc, orbitY: 2.8, phase: 3 },
+      { x: 0, z: 11, scale: 1.0, color: 0xaa44ff, orbitY: 3.2, phase: 4 },
+      { x: 0, z: -11, scale: 0.75, color: 0x44aaff, orbitY: 3.8, phase: 5 },
+      { x: -22, z: 13, scale: 1.4, color: 0xcc44aa, orbitY: 5.0, phase: 6 },
+      { x: -20, z: -14, scale: 1.2, color: 0x8844ff, orbitY: 5.5, phase: 7 },
+      { x: 21, z: 13, scale: 1.3, color: 0xee66cc, orbitY: 4.8, phase: 8 },
+      { x: 23, z: -11, scale: 1.5, color: 0x44aaff, orbitY: 6.0, phase: 9 },
+      { x: -5, z: 17, scale: 1.1, color: 0x8844ff, orbitY: 4.4, phase: 10 },
+      { x: 7, z: -17, scale: 1.3, color: 0xcc44aa, orbitY: 5.2, phase: 11 },
+      { x: -18, z: 1, scale: 1.0, color: 0xee66cc, orbitY: 4.0, phase: 12 },
+      { x: 17, z: 2, scale: 1.2, color: 0x44aaff, orbitY: 4.6, phase: 13 },
     ];
     crystalDefs.forEach(({ x, z, scale, color, orbitY, phase }) => {
       const c = createFloatingCrystal({ color, scale, orbitR: 0, orbitY: this._config.boardY + orbitY, phase });
@@ -180,10 +181,10 @@ export class Game {
 
     // Clusters – several grouped formations scattered around the scene
     const clusterDefs = [
-      { x:  12, z: -3,  y: 1,   orbitY: 2.5 },
-      { x: -16, z:  0,  y: 1,   orbitY: 2.8 },
-      { x:   6, z: -15, y: 1.5, orbitY: 3.0 },
-      { x: -10, z:  14, y: 1.5, orbitY: 3.2 },
+      { x: 12, z: -3, y: 1, orbitY: 2.5 },
+      { x: -16, z: 0, y: 1, orbitY: 2.8 },
+      { x: 6, z: -15, y: 1.5, orbitY: 3.0 },
+      { x: -10, z: 14, y: 1.5, orbitY: 3.2 },
     ];
     clusterDefs.forEach(({ x, z, y, orbitY }) => {
       const cl = createCrystalCluster({ orbitY });
@@ -195,17 +196,42 @@ export class Game {
 
   _initInteraction() {
     const raycaster = new THREE.Raycaster();
-    const mouse     = new THREE.Vector2();
-    const boardY    = this._config.boardY + 0.3;
-    const planeY    = new THREE.Plane(new THREE.Vector3(0, 1, 0), -boardY);
+    const mouse = new THREE.Vector2();
+    const boardY = this._config.boardY + 0.3;
+    const planeY = new THREE.Plane(new THREE.Vector3(0, 1, 0), -boardY);
+
+    // Turret context menu
+    this._turretMenu = new TurretMenu();
 
     this._renderer.domElement.addEventListener('click', e => {
-      if (this._state.phase !== 'build' && this._state.phase !== 'menu') return;
-      if (this._state.phase === 'menu') return;  // no placement before first wave
-
-      mouse.x = (e.clientX / window.innerWidth)  * 2 - 1;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, this._camera);
+
+      // ── Check if clicking an existing tower (works in build + combat) ──
+      if (this._state.phase === 'build' || this._state.phase === 'combat') {
+        const towerMeshes = this._towers.map(t => t.mesh);
+        const hits = raycaster.intersectObjects(towerMeshes, true);
+        if (hits.length > 0) {
+          // Walk up to find the root tower mesh
+          let obj = hits[0].object;
+          while (obj.parent && !towerMeshes.includes(obj)) obj = obj.parent;
+          const tower = this._towers.find(t => t.mesh === obj);
+          if (tower) {
+            this._turretMenu.show(tower, e.clientX, e.clientY, {
+              onTargetChange: (t, mode) => { t.targeting = mode; },
+              onSell: (t) => { this._sellTower(t); },
+            });
+            return;
+          }
+        }
+      }
+
+      // Close the menu when clicking on empty space
+      if (this._turretMenu.isOpen) { this._turretMenu.hide(); return; }
+
+      // ── Tower placement (build phase only) ──
+      if (this._state.phase !== 'build') return;
 
       const hit = new THREE.Vector3();
       if (!raycaster.ray.intersectPlane(planeY, hit)) return;
@@ -275,6 +301,10 @@ export class Game {
       range: this._config.laserTowerRange,
       damage: this._config.laserTowerDamage,
       target: null,
+      // Metadata for TurretMenu
+      name: turret.name,
+      cost: this._config.laserTowerCost,
+      targeting: 'closest',   // 'closest' | 'first'
     };
     this._towers.push(towerData);
   }
@@ -293,8 +323,8 @@ export class Game {
     this._menu = new NavigationMenu(this._mount);
     this._menu.show('main');
 
-    this._menu.on('start',    () => { this._state.phase = 'build'; });
-    this._menu.on('restart',  () => { this._fullReset(); });
+    this._menu.on('start', () => { this._state.phase = 'build'; });
+    this._menu.on('restart', () => { this._fullReset(); });
     this._menu.on('mainmenu', () => { this._fullReset(); this._menu.show('main'); });
     this._menu.on('nextwave', () => { this._startWave(); });
 
@@ -367,7 +397,7 @@ export class Game {
     this._scene.add(e.mesh);
     this._animFns.push(e);
 
-    const hp    = this._config.enemyBaseHP;
+    const hp = this._config.enemyBaseHP;
     const speed = this._config.enemyBaseSpeed;
 
     // Keep reference to the animFn entry so we can splice it later
@@ -377,7 +407,7 @@ export class Game {
       triggerDeath: e.triggerDeath,
       triggerExplode: e.triggerExplode,
       setWalk: e.setWalk,
-      _animRef: e,   // reference to entry in _animFns
+      _animRef: e, // reference to entry in _animFns
       pathT: 0,
       speed,
       hp,
@@ -407,8 +437,8 @@ export class Game {
         e.alive = false;
         e.reachedEnd = true;
         e.triggerExplode(
-          () => { this._state.damageNexus(20); },          // onHit: fires when burst starts
-          () => {                                           // onDone: fires when animation finishes
+          () => { this._state.damageNexus(20); }, // onHit: fires when burst starts
+          () => { // onDone: fires when animation finishes
             this._scene.remove(e.mesh);
             const idx = this._animFns.indexOf(e._animRef);
             if (idx !== -1) this._animFns.splice(idx, 1);
@@ -436,17 +466,24 @@ export class Game {
     for (const tower of this._towers) {
       tower.fireTimer -= delta;
 
-      // Find closest enemy in range
+      // Find target based on targeting mode
       let best = null;
-      let bestDist = Infinity;
       const tp = tower.mesh.position;
 
-      for (const e of this._enemies) {
-        if (!e.alive) continue;
-        const d = tp.distanceTo(e.mesh.position);
-        if (d < tower.range && d < bestDist) {
-          best = e;
-          bestDist = d;
+      if (tower.targeting === 'closest') {
+        let bestDist = Infinity;
+        for (const e of this._enemies) {
+          if (!e.alive) continue;
+          const d = tp.distanceTo(e.mesh.position);
+          if (d < tower.range && d < bestDist) { best = e; bestDist = d; }
+        }
+      } else {
+        // 'first' — enemy furthest along the path (highest pathT) within range
+        let bestPathT = -1;
+        for (const e of this._enemies) {
+          if (!e.alive) continue;
+          const d = tp.distanceTo(e.mesh.position);
+          if (d < tower.range && e.pathT > bestPathT) { best = e; bestPathT = e.pathT; }
         }
       }
 
@@ -470,6 +507,19 @@ export class Game {
         }
       }
     }
+  }
+
+  // ── Sell tower ────────────────────────────────────────────────────────────
+
+  _sellTower(tower) {
+    const refund = Math.floor(tower.cost * 0.5);
+    this._state.addGold(refund);
+    this._scene.remove(tower.mesh);
+    const animIdx = this._animFns.indexOf(tower._animRef);
+    if (animIdx !== -1) this._animFns.splice(animIdx, 1);
+    const towerIdx = this._towers.indexOf(tower);
+    if (towerIdx !== -1) this._towers.splice(towerIdx, 1);
+    this._hud.showMsg(`Sold for +◈ ${refund}`, 2000);
   }
 
   // ── Full reset ────────────────────────────────────────────────────────────

@@ -2,71 +2,6 @@
 
 ## GitHub Issues Backlog
 
-### 1. [Logic] Bootstrap project structure
-- Scope: Create `src/core`, `src/entities`, `src/systems`, `src/ui`, `src/config`, plus entrypoint wiring.
-- Labels: `game-logic`, `docs`, `priority:high`, `milestone:intermediate`
-- Done when: folders exist and app boots without runtime errors.
-
-### 2. [Logic] Implement game loop and `GameState`
-- Scope: Add `update(delta)` flow and central state (`health`, `wave`, `money`, `gameOver`, `paused`).
-- Labels: `game-logic`, `priority:high`, `milestone:intermediate`
-- Done when: state updates every frame and is accessible across systems.
-
-### 3. [ICG] Build board and spline path
-- Scope: Create floating arena and define enemy route with `CatmullRomCurve3`.
-- Labels: `icg`, `game-logic`, `priority:high`, `milestone:intermediate`
-- Done when: path is visible/debuggable and usable by enemy movement.
-
-### 4. [ICG] Model Energy Nexus (hierarchical primitives)
-- Scope: Build nexus using primitive geometry and grouped transforms.
-- Labels: `icg`, `priority:medium`, `milestone:intermediate`
-- Done when: nexus model is placed at path end and clearly readable.
-
-### 5. [ICG] Set up lighting, shadows, and fog
-- Scope: Add directional + ambient light, enable/tune shadows, configure fog depth.
-- Labels: `icg`, `priority:high`, `milestone:intermediate`
-- Done when: scene has clear depth and shadow readability.
-
-### 6. [ICG] Define material language (metallic + emissive)
-- Scope: Create consistent materials for towers, enemies, and energy elements.
-- Labels: `icg`, `priority:medium`, `milestone:intermediate`
-- Done when: palette and material roles match README art direction.
-
-### 7. [Logic] Implement enemy base entity and spline movement
-- Scope: Add enemy stats (`hp`, `speed`, `damage`, `reward`) and movement along path.
-- Labels: `game-logic`, `priority:high`, `milestone:intermediate`
-- Done when: enemies reach end, damage nexus, and despawn correctly.
-
-### 8. [Logic] Create wave manager + `SPACE` wave start
-- Scope: Implement timed spawns, active wave state, and wave completion detection.
-- Labels: `game-logic`, `priority:high`, `milestone:intermediate`
-- Done when: pressing `SPACE` starts a valid wave and prevents double-start.
-
-### 9. [Logic] Add raycast tower placement with validation
-- Scope: Implement mouse placement and block invalid spots (path overlap + tower overlap).
-- Labels: `game-logic`, `ui`, `priority:high`, `milestone:intermediate`
-- Done when: valid/invalid placement behavior is deterministic.
-
-### 10. [Logic] Implement Laser Tower targeting and attack
-- Scope: Add in-range target acquisition, turret rotation, and damage output.
-- Labels: `game-logic`, `priority:high`, `milestone:intermediate`
-- Done when: Laser Tower reliably kills enemies in range.
-
-### 11. [ICG][Logic] Add projectile/beam visuals and hit feedback
-- Scope: Implement shot visuals and impact feedback tied to real damage events.
-- Labels: `icg`, `game-logic`, `audio-vfx`, `priority:medium`, `milestone:intermediate`
-- Done when: attack feels responsive and clearly communicated.
-
-### 12. [Logic] Implement economy (costs + rewards)
-- Scope: Add tower purchase cost, kill rewards, and money checks on placement.
-- Labels: `game-logic`, `priority:medium`, `milestone:intermediate`
-- Done when: player cannot place towers without enough currency.
-
-### 13. [UI] Build HUD (health, wave, money, status)
-- Scope: Add on-screen values and clear state messages.
-- Labels: `ui`, `game-logic`, `priority:high`, `milestone:intermediate`
-- Done when: HUD updates correctly in real time.
-
 ### 14. [Logic] Add enemy archetypes (fast, tank, balanced)
 - Scope: Implement 3 enemy types with distinct gameplay behavior.
 - Labels: `game-logic`, `priority:medium`, `milestone:final`
@@ -87,11 +22,6 @@
 - Labels: `game-logic`, `ui`, `priority:high`, `milestone:final`
 - Done when: full match loop is playable without manual resets.
 
-### 18. [Presentation] Prepare intermediate presentation package
-- Scope: Create 7-minute script, map features to ICG topics, and record backup demo clip.
-- Labels: `presentation`, `priority:high`, `milestone:intermediate`
-- Done when: demo flow is rehearsed and fallback video is ready.
-
 ### 19. [Delivery] Web deployment + self-contained setup
 - Scope: Ensure project runs from web host and setup is reproducible on another machine.
 - Labels: `delivery`, `docs`, `priority:high`, `milestone:final`
@@ -102,16 +32,6 @@
 - Labels: `delivery`, `docs`, `ai-disclosure`, `priority:high`, `milestone:final`
 - Done when: compliance text is present and consistent across deliverables.
 
-### 21. [ICG] Model first tower (Laser) with hierarchical primitives
-- Scope: Build Laser Tower from primitives with clear parent-child structure for rotating/animated parts.
-- Labels: `icg`, `priority:high`, `milestone:intermediate`
-- Done when: Laser model is integrated and animation-ready in scene.
-
-### 22. [ICG] Model first enemy archetype with hierarchical primitives
-- Scope: Build the initial enemy model (balanced archetype) with clear silhouette and style consistency.
-- Labels: `icg`, `priority:high`, `milestone:intermediate`
-- Done when: first enemy model is integrated and used in gameplay for intermediate demo.
-
 ### 23. [ICG] Model second tower (Pulse) with hierarchical primitives
 - Scope: Build Pulse Tower model from primitives, consistent with the Laser model style.
 - Labels: `icg`, `priority:medium`, `milestone:final`
@@ -121,11 +41,6 @@
 - Scope: Build the fast and tank enemy models with distinct silhouettes and matching visual language.
 - Labels: `icg`, `priority:medium`, `milestone:final`
 - Done when: all 3 enemy archetype models are present and visually distinguishable.
-
-### 25. [ICG] Environment texture and skybox pass
-- Scope: Add textured platform/terrain treatment and a space skybox (or equivalent starfield environment).
-- Labels: `icg`, `priority:medium`, `milestone:intermediate`
-- Done when: scene has textured ground + background environment matching art direction.
 
 ### 26. [Logic] Add debug hotkeys for development
 - Scope: Add optional debug controls (for example: spawn enemy, add money, skip wave) for testing flows faster.
@@ -186,6 +101,6 @@
 
 ## Notes
 
-Add extra elements in the background. could add a Sun, which would provide the main light source, a space station, stuff like that.
 EVENTUALLY lets add some maps, 2 more. as a way to have replayability.
 Turret targeting is a bit off, could be nice to have a way to choose between targeting the closest or the first enemy.
+Add a menu that opens when you click on a turret. You can sell the turret and alter its targeting.

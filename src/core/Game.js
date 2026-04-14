@@ -250,8 +250,8 @@ export class Game {
       if (this._towers.some(t => Math.abs(t.gx - gx) < 1 && Math.abs(t.gz - gz) < 1)) return;
 
       // Cost
-      if (!this._state.spendGold(this._config.laserTowerCost)) {
-        this._hud.showMsg(`Need ${this._config.laserTowerCost} gold!`);
+      if (!this._state.spendStardust(this._config.laserTowerCost)) {
+        this._hud.showMsg(`Need ${this._config.laserTowerCost} stardust!`);
         return;
       }
 
@@ -295,7 +295,6 @@ export class Game {
       trackTarget: turret.trackTarget,
       _animRef: turret,
       gx, gz,
-      hp: 100,
       fireTimer: 0,
       fireRate: this._config.laserTowerFireRate,
       range: this._config.laserTowerRange,
@@ -437,14 +436,14 @@ export class Game {
         e.alive = false;
         e.reachedEnd = true;
         e.triggerExplode(
-          () => { this._state.damageNexus(20); }, // onHit: fires when burst starts
+          () => { this._state.damageNexus(this._config.enemyBaseDamage); }, // onHit: fires when burst starts
           () => { // onDone: fires when animation finishes
             this._scene.remove(e.mesh);
             const idx = this._animFns.indexOf(e._animRef);
             if (idx !== -1) this._animFns.splice(idx, 1);
           }
         );
-        this._state.enemyReachedEnd(); // no gold/score for enemies that deal damage
+        this._state.enemyReachedEnd(); // no stardust/score for enemies that deal damage
         continue;
       }
 
@@ -513,7 +512,7 @@ export class Game {
 
   _sellTower(tower) {
     const refund = Math.floor(tower.cost * 0.5);
-    this._state.addGold(refund);
+    this._state.addStardust(refund);
     this._scene.remove(tower.mesh);
     const animIdx = this._animFns.indexOf(tower._animRef);
     if (animIdx !== -1) this._animFns.splice(animIdx, 1);

@@ -8,7 +8,7 @@ export class GameState {
   reset() {
     const c = this.config;
     this.hp = c.nexusMaxHP;
-    this.gold = c.startingGold;
+    this.stardust = c.startingStardust;
     this.wave = 0;
     this.enemiesLeft = 0;
     this.phase = 'menu';   // 'menu' | 'build' | 'combat' | 'gameover' | 'victory'
@@ -33,21 +33,21 @@ export class GameState {
     }
   }
 
-  addGold(amount) {
-    this.gold += amount;
-    this.emit('goldChanged', { gold: this.gold });
+  addStardust(amount) {
+    this.stardust += amount;
+    this.emit('stardustChanged', { stardust: this.stardust });
   }
 
-  spendGold(amount) {
-    if (this.gold < amount) return false;
-    this.gold -= amount;
-    this.emit('goldChanged', { gold: this.gold });
+  spendStardust(amount) {
+    if (this.stardust < amount) return false;
+    this.stardust -= amount;
+    this.emit('stardustChanged', { stardust: this.stardust });
     return true;
   }
 
   enemyKilled() {
     this.score += 10;
-    this.addGold(this.config.killReward);
+    this.addStardust(this.config.killReward);
     this.enemiesLeft = Math.max(0, this.enemiesLeft - 1);
     this.emit('enemyKilled', { enemiesLeft: this.enemiesLeft });
     if (this.enemiesLeft <= 0 && this.phase === 'combat') {
@@ -62,7 +62,7 @@ export class GameState {
   }
 
   enemyReachedEnd() {
-    // Enemy dealt damage — no gold or score reward
+    // Enemy dealt damage — no stardust or score reward
     this.enemiesLeft = Math.max(0, this.enemiesLeft - 1);
     this.emit('enemyKilled', { enemiesLeft: this.enemiesLeft });
     if (this.enemiesLeft <= 0 && this.phase === 'combat') {

@@ -101,6 +101,20 @@
 
 ## Notes
 
-EVENTUALLY lets add some maps, 2 more. as a way to have replayability.
-Turret targeting is a bit off, could be nice to have a way to choose between targeting the closest or the first enemy.
-Add a menu that opens when you click on a turret. You can sell the turret and alter its targeting.
+make sure enemies despawn on death/explode.
+spawning is having some performance issues (both enemies and turrets).
+make better UI for main menu, game (nexus HP, Money (change to stardust), Enemy/Wave count, Tower Shop).
+Get a better background for the main menu.
+Add a button to go back to the main menu.
+Add a better screen for win/lose.
+Currently the screens are somewhat transparent. change that! main menu should have a background (image)
+New enemies and new towers
+Sun is a bit too close. push it back a bit.
+Organize the code better. board components should be their own class. Road
+Enemies and towers should be their own class with their own stats. It makes it easier to create new towers/enemies. do NOT have it all in the game.js
+Waves should be hard coded (number and type of enemies, as well as how quickly the enemies spawn).
+Create extra maps. 2 more.
+Board feels empty when it comes to grass.
+Textures! lets add textures to the objects. to make it look beter
+Path looks too simple
+sfx - use epidemic sound

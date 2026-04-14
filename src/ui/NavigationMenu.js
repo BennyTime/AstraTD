@@ -35,9 +35,9 @@ export class NavigationMenu {
           <p><span class="key">SPACE</span> Start next wave</p>
           <p><span class="key">CLICK</span> Place laser turret on board</p>
           <p>Clicking the turret opens a menu to change targeting or sell it.</p>
-          <p>Enemies follow the <span class="hl">orange path</span> to the <span class="hl">Nexus</span>.</p>
+          <p>Enemies follow the <span class="hl"> path</span> to the <span class="hl">Nexus</span>.</p>
           <p>Each enemy that reaches the Nexus deals damage.</p>
-          <p>Kill enemies to earn <span class="hl gold">gold</span> and buy more towers.</p>
+          <p>Kill enemies to earn <span class="hl stardust">stardust</span> and buy more towers.</p>
         </div>
         <button class="nav-btn nav-btn-primary" id="btn-how-back">BACK</button>
       </div>
@@ -45,7 +45,8 @@ export class NavigationMenu {
       <!-- ── GAME OVER ── -->
       <div class="nav-screen nav-hidden" id="nav-gameover">
         <div class="nav-logo">
-          <h1 class="nav-title gameover-title">NEXUS DESTROYED</h1>
+          <h1 class="nav-title gameover-title">NEXUS</h1>
+          <h1 class="nav-title gameover-title">DESTROYED</h1>
           <p class="nav-sub">The enemy has breached your defenses.</p>
         </div>
         <div class="gameover-score">
@@ -58,7 +59,7 @@ export class NavigationMenu {
         </div>
       </div>
 
-      <!-- ── WAVE CLEAR / VICTORY ── -->
+      <!-- ── WAVE CLEAR ── -->
       <div class="nav-screen nav-hidden" id="nav-waveclear">
         <h2 class="nav-section-title waveclear-wave" id="wc-wave-label">WAVE CLEARED</h2>
         <p class="nav-sub">Prepare your defenses for the next assault.</p>
@@ -243,7 +244,7 @@ css.textContent = `
     font-weight: 700;
   }
   .hl   { color: #ff8840; font-weight: 600; }
-  .gold { color: #ffcc00 !important; }
+  .stardust { color: #12c9f7 !important; }
 
   .gameover-score { margin: 20px auto; }
   .score-label { display: block; font-size: 11px; letter-spacing: 0.2em; color: #7ab8d8; margin-bottom: 6px; }

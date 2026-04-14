@@ -24,7 +24,7 @@ export const GameConfig = {
   spawnInterval: 1200,
   
   // Economy
-  startingGold: 200,
+  startingStardust: 200,
   killReward: 25,
 
   // Nexus
@@ -37,6 +37,7 @@ export const GameConfig = {
   laserTowerFireRate: 1.0,
 
   // Enemies
-  enemyBaseSpeed: 3.5,
+  enemyBaseSpeed: 20,
   enemyBaseHP: 60,
+  enemyBaseDamage: 200,
 };

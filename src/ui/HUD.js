@@ -24,9 +24,9 @@ export class HUD {
         </div>
 
         <div class="hud-row">
-          <span class="hud-icon" style="color:#ffcc00">◈</span>
-          <span class="hud-label">GOLD</span>
-          <span class="hud-val hud-gold" id="hud-gold">150</span>
+          <span class="hud-icon" style="color:#12c9f7">✶</span>
+          <span class="hud-label">STARDUST</span>
+          <span class="hud-val hud-stardust" id="hud-stardust">150</span>
         </div>
 
         <div class="hud-row">
@@ -51,7 +51,7 @@ export class HUD {
 
     this._hpBar   = document.getElementById('hud-hp-bar');
     this._hpVal   = document.getElementById('hud-hp-val');
-    this._gold    = document.getElementById('hud-gold');
+    this._stardust = document.getElementById('hud-stardust');
     this._wave    = document.getElementById('hud-wave');
     this._enemies = document.getElementById('hud-enemies');
     this._waveBtn = document.getElementById('hud-wave-btn');
@@ -64,7 +64,7 @@ export class HUD {
     this._sync(state);
 
     state.on('nexusDamaged', () => this._sync(state));
-    state.on('goldChanged',  () => this._syncGold(state));
+    state.on('stardustChanged',  () => this._syncStardust(state));
     state.on('waveStarted',  () => { this._syncWave(state); this._syncEnemies(state); });
     state.on('enemyKilled',  () => this._syncEnemies(state));
     state.on('waveCleared',  () => {
@@ -90,12 +90,12 @@ export class HUD {
       ? '#46d4ff'
       : pct > 0.25 ? '#ffaa00' : '#ff2060';
     this._hpVal.textContent  = state.hp;
-    this._syncGold(state);
+    this._syncStardust(state);
     this._syncWave(state);
     this._syncEnemies(state);
   }
 
-  _syncGold(state)    { this._gold.textContent    = state.gold; }
+  _syncStardust(state)    { this._stardust.textContent    = state.stardust; }
   _syncWave(state)    { this._wave.textContent    = state.wave || '—'; }
   _syncEnemies(state) { this._enemies.textContent = state.phase === 'combat' ? state.enemiesLeft : '—'; }
 
@@ -145,7 +145,7 @@ style.textContent = `
   .hud-icon   { font-size: 14px; width: 16px; text-align: center; }
   .hud-label  { font-size: 10px; letter-spacing: 0.1em; color: #7ab8d8; min-width: 50px; }
   .hud-val    { font-size: 13px; font-weight: 600; color: #d8f1ff; margin-left: auto; }
-  .hud-gold   { color: #ffcc00; }
+  .hud-stardust   { color: #12c9f7; }
   .hud-bar-wrap {
     flex: 1;
     height: 8px;

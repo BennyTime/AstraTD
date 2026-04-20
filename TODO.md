@@ -110,7 +110,7 @@ Add a better screen for win/lose.
 Currently the screens are somewhat transparent. change that! main menu should have a background (image)
 New enemies and new towers
 Sun is a bit too close. push it back a bit.
-Organize the code better. board components should be their own class. Road
+Organize the code better. board components should be their own class. Road should be separate as well to be called. 
 Enemies and towers should be their own class with their own stats. It makes it easier to create new towers/enemies. do NOT have it all in the game.js
 Waves should be hard coded (number and type of enemies, as well as how quickly the enemies spawn).
 Create extra maps. 2 more.

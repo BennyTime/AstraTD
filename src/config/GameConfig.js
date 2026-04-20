@@ -1,4 +1,6 @@
 // Central configuration for Astra TD
+// Note: per-unit stats (HP, speed, damage, cost, etc.) live in the
+// respective model files (StandardEnemyStats, LaserTurretStats, …).
 
 export const GameConfig = {
   // Board
@@ -22,22 +24,11 @@ export const GameConfig = {
   enemiesPerWave: 6,
   enemiesPerWaveGrow: 2,
   spawnInterval: 1200,
-  
+
   // Economy
   startingStardust: 200,
   killReward: 25,
 
   // Nexus
   nexusMaxHP: 200,
-
-  // Towers
-  laserTowerCost: 100,
-  laserTowerRange: 6,
-  laserTowerDamage: 15,
-  laserTowerFireRate: 1.0,
-
-  // Enemies
-  enemyBaseSpeed: 20,
-  enemyBaseHP: 60,
-  enemyBaseDamage: 200,
 };

@@ -23,15 +23,48 @@ import * as THREE from 'three';
  *   - death  : crumple fall + fade
  *   - explode: damage burst at nexus
  */
+
+export const StandardEnemyStats = {
+  hp:     60,
+  speed:  2,
+  damage: 20, // nexus damage on reach
+  reward: 25,  // stardust on kill
+};
+
+const _geo = {
+  torso:       new THREE.BoxGeometry(0.55, 0.55, 0.32),
+  chestPlate:  new THREE.BoxGeometry(0.22, 0.38, 0.1),
+  chestGlow:   new THREE.CylinderGeometry(0.07, 0.07, 0.12, 12),
+  head:        new THREE.BoxGeometry(0.38, 0.32, 0.3),
+  visor:       new THREE.BoxGeometry(0.3, 0.1, 0.06),
+  antenna:     new THREE.CylinderGeometry(0.015, 0.015, 0.22, 5),
+  antTip:      new THREE.SphereGeometry(0.04, 6, 6),
+  shoulderPad: new THREE.BoxGeometry(0.14, 0.14, 0.22),
+  upperArm:    new THREE.BoxGeometry(0.12, 0.28, 0.12),
+  elbow:       new THREE.SphereGeometry(0.065, 8, 8),
+  lowerArm:    new THREE.BoxGeometry(0.1, 0.25, 0.1),
+  fist:        new THREE.BoxGeometry(0.12, 0.1, 0.12),
+  pelvis:      new THREE.BoxGeometry(0.44, 0.2, 0.28),
+  booster:     new THREE.BoxGeometry(0.3, 0.45, 0.15),
+  boosterGlow: new THREE.CylinderGeometry(0.05, 0.07, 0.1, 8),
+  upperLeg:    new THREE.BoxGeometry(0.15, 0.3, 0.15),
+  knee:        new THREE.SphereGeometry(0.08, 8, 8),
+  lowerLeg:    new THREE.BoxGeometry(0.13, 0.28, 0.13),
+  foot:        new THREE.BoxGeometry(0.14, 0.1, 0.22),
+  kneeStrip:   new THREE.BoxGeometry(0.13, 0.04, 0.06),
+  shard:       new THREE.IcosahedronGeometry(0.08, 0),
+};
+
 export function createStandardEnemy() {
   const group = new THREE.Group();
 
-  // ── Materials ──────────────────────────────────────────────────────────
+  // ── Materials (per-instance so death-fade works independently) ──────────
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a0a2e, roughness: 0.5, metalness: 0.85 });
   const accentMat = new THREE.MeshStandardMaterial({ color: 0xff2060, emissive: new THREE.Color(0xff2060), emissiveIntensity: 1.2, roughness: 0.3 });
   const visorMat = new THREE.MeshStandardMaterial({ color: 0xff3388, emissive: new THREE.Color(0xff3388), emissiveIntensity: 2.0, transparent: true, opacity: 0.9 });
   const jointMat = new THREE.MeshStandardMaterial({ color: 0x0d0618, roughness: 0.4, metalness: 0.9 });
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x120820, roughness: 0.6, metalness: 0.7 });
+  const shardMat = new THREE.MeshStandardMaterial({ color: 0xff2060, emissive: new THREE.Color(0xff2060), emissiveIntensity: 2, transparent: true });
 
   const SCALE = 0.72; // overall size
 
@@ -40,46 +73,43 @@ export function createStandardEnemy() {
   group.add(torso);
   torso.position.y = 1.0 * SCALE;
 
-  const torsoMesh = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.55, 0.32), bodyMat);
+  const torsoMesh = new THREE.Mesh(_geo.torso, bodyMat);
   torsoMesh.castShadow = true;
   torso.add(torsoMesh);
 
   // Chest armour plates
-  const chestL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.38, 0.1), darkMat);
+  const chestL = new THREE.Mesh(_geo.chestPlate, darkMat);
   chestL.position.set(-0.14, 0, 0.16);
   torso.add(chestL);
-  const chestR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.38, 0.1), darkMat);
+  const chestR = new THREE.Mesh(_geo.chestPlate, darkMat);
   chestR.position.set(0.14, 0, 0.16);
   torso.add(chestR);
 
   // Chest core glow
-  const chestGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.12, 12), accentMat);
+  const chestGlow = new THREE.Mesh(_geo.chestGlow, accentMat);
   chestGlow.rotation.x = Math.PI / 2;
   chestGlow.position.set(0, 0.04, 0.17);
   torso.add(chestGlow);
-  const chestLight = new THREE.PointLight(0xff2060, 0.8, 2);
-  chestLight.position.set(0, 0, 0.18);
-  torso.add(chestLight);
 
   // ── Head ──
   const headGroup = new THREE.Group();
   headGroup.position.y = 0.38 * SCALE;
   torso.add(headGroup);
 
-  const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.32, 0.3), bodyMat);
+  const headMesh = new THREE.Mesh(_geo.head, bodyMat);
   headMesh.castShadow = true;
   headGroup.add(headMesh);
 
   // Visor strip
-  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.06), visorMat);
+  const visor = new THREE.Mesh(_geo.visor, visorMat);
   visor.position.set(0, 0.04, 0.16);
   headGroup.add(visor);
 
   // Antenna on head
-  const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.22, 5), jointMat);
+  const ant = new THREE.Mesh(_geo.antenna, jointMat);
   ant.position.set(0.1, 0.22, 0);
   headGroup.add(ant);
-  const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), accentMat);
+  const antTip = new THREE.Mesh(_geo.antTip, accentMat);
   antTip.position.set(0.1, 0.34, 0);
   headGroup.add(antTip);
 
@@ -91,7 +121,7 @@ export function createStandardEnemy() {
     torso.add(shoulder);
 
     // Shoulder pad
-    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.22), darkMat);
+    const pad = new THREE.Mesh(_geo.shoulderPad, darkMat);
     pad.position.set(sign * 0.06, 0, 0);
     shoulder.add(pad);
 
@@ -99,13 +129,13 @@ export function createStandardEnemy() {
     const upperArmPivot = new THREE.Group();
     shoulder.add(upperArmPivot);
 
-    const upperArm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.28, 0.12), bodyMat);
+    const upperArm = new THREE.Mesh(_geo.upperArm, bodyMat);
     upperArm.position.y = -0.14;
     upperArm.castShadow = true;
     upperArmPivot.add(upperArm);
 
     // Elbow joint
-    const elbow = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 8), jointMat);
+    const elbow = new THREE.Mesh(_geo.elbow, jointMat);
     elbow.position.y = -0.28;
     upperArmPivot.add(elbow);
 
@@ -114,13 +144,13 @@ export function createStandardEnemy() {
     lowerArmPivot.position.y = -0.28;
     upperArmPivot.add(lowerArmPivot);
 
-    const lowerArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.25, 0.1), bodyMat);
+    const lowerArm = new THREE.Mesh(_geo.lowerArm, bodyMat);
     lowerArm.position.y = -0.125;
     lowerArm.castShadow = true;
     lowerArmPivot.add(lowerArm);
 
     // Fist
-    const fist = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.12), darkMat);
+    const fist = new THREE.Mesh(_geo.fist, darkMat);
     fist.position.y = -0.28;
     lowerArmPivot.add(fist);
 
@@ -134,15 +164,15 @@ export function createStandardEnemy() {
   pelvis.position.y = 0.7 * SCALE;
   group.add(pelvis);
 
-  const pelvisMesh = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.2, 0.28), bodyMat);
+  const pelvisMesh = new THREE.Mesh(_geo.pelvis, bodyMat);
   pelvisMesh.castShadow = true;
   pelvis.add(pelvisMesh);
 
   // Back booster pack
-  const booster = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.45, 0.15), darkMat);
+  const booster = new THREE.Mesh(_geo.booster, darkMat);
   booster.position.set(0, 0.15, -0.22);
   torso.add(booster);
-  const bGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 0.1, 8), accentMat);
+  const bGlow = new THREE.Mesh(_geo.boosterGlow, accentMat);
   bGlow.rotation.x = Math.PI / 2;
   bGlow.position.set(0, -0.05, -0.3);
   torso.add(bGlow);
@@ -156,13 +186,13 @@ export function createStandardEnemy() {
     hipPivot.position.set(sign * 0.16, 0, 0);
     pelvis.add(hipPivot);
 
-    const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.3, 0.15), bodyMat);
+    const upperLeg = new THREE.Mesh(_geo.upperLeg, bodyMat);
     upperLeg.position.y = -0.15;
     upperLeg.castShadow = true;
     hipPivot.add(upperLeg);
 
     // Knee joint
-    const knee = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), jointMat);
+    const knee = new THREE.Mesh(_geo.knee, jointMat);
     knee.position.y = -0.32;
     hipPivot.add(knee);
 
@@ -171,18 +201,18 @@ export function createStandardEnemy() {
     kneePivot.position.y = -0.32;
     hipPivot.add(kneePivot);
 
-    const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.28, 0.13), bodyMat);
+    const lowerLeg = new THREE.Mesh(_geo.lowerLeg, bodyMat);
     lowerLeg.position.y = -0.14;
     lowerLeg.castShadow = true;
     kneePivot.add(lowerLeg);
 
     // Foot
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.1, 0.22), darkMat);
+    const foot = new THREE.Mesh(_geo.foot, darkMat);
     foot.position.set(0, -0.32, 0.04);
     kneePivot.add(foot);
 
     // Knee accent strip
-    const strip = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.04, 0.06), accentMat);
+    const strip = new THREE.Mesh(_geo.kneeStrip, accentMat);
     strip.position.set(0, -0.3, 0.07);
     hipPivot.add(strip);
 
@@ -192,14 +222,10 @@ export function createStandardEnemy() {
   const legR = makeLeg('R');
 
   // ── Explosion shards ──────────────────────────────────────────────────
-  const SHARD_COUNT = 30;
-  const shardGeo = new THREE.IcosahedronGeometry(0.08, 0);
+  const SHARD_COUNT = 18;
   const shards = [];
   for (let i = 0; i < SHARD_COUNT; i++) {
-    const s = new THREE.Mesh(
-      shardGeo,
-      new THREE.MeshStandardMaterial({ color: 0xff2060, emissive: new THREE.Color(0xff2060), emissiveIntensity: 2, transparent: true })
-    );
+    const s = new THREE.Mesh(_geo.shard, shardMat);
     s.visible = false;
     s.position.set(0, 0.9, 0);
     const theta = Math.random() * Math.PI * 2;
@@ -280,7 +306,6 @@ export function createStandardEnemy() {
         const flinch = Math.sin((Math.min(deathTimer, 0.13) / 0.13) * Math.PI);
         torso.rotation.x = -flinch * 0.3;
         visorMat.emissiveIntensity = 2.0 + flinch * 2.5;  // bright flicker
-        chestLight.intensity = flinch * 3.5;
 
         if (deathTimer >= 0.13) {
           breakReady = true;
@@ -322,9 +347,6 @@ export function createStandardEnemy() {
       } else {
         // ── Break phase: pieces fly apart ─────────────────────────────────
         const bTime = deathTimer - 0.13;
-
-        // Quickly kill the flash light
-        chestLight.intensity = Math.max(0, chestLight.intensity - delta * 18);
 
         breakParts.forEach(obj => {
           obj.position.addScaledVector(obj.userData.breakVel, delta);
@@ -384,10 +406,10 @@ export function createStandardEnemy() {
           if (!group.userData._shardSpawned) {
             group.userData._shardSpawned = true;
             group.position.y = group.userData._joyBaseY || 0.186;
+            shardMat.opacity = 1;
             shards.forEach(s => {
               s.visible = true;
-              s.position.set(0, 0.9, 0); // local space — group is already at world position
-              s.material.opacity = 1;
+              s.position.set(0, 0.9, 0);
             });
             torso.visible = false;
             pelvis.visible = false;
@@ -396,12 +418,14 @@ export function createStandardEnemy() {
           }
         }
 
+        // Update shard positions/rotations; opacity is shared via shardMat
+        const shardOpacity = Math.max(0, 1 - burstTime / 1.0);
+        shardMat.opacity = shardOpacity;
         shards.forEach(s => {
           s.position.addScaledVector(s.userData.vel, delta);
           s.userData.vel.y -= delta * 8;
           s.rotation.x += s.userData.rot.x * delta;
           s.rotation.y += s.userData.rot.y * delta;
-          s.material.opacity = Math.max(0, 1 - burstTime / 1.0);
         });
 
         if (burstTime > 1.0) {

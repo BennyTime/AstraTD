@@ -9,8 +9,8 @@ import { createCargoShip } from '../models/misc/CargoShip.js';
 import { createCrystalCluster, createFloatingCrystal } from '../models/misc/FloatingCrystal.js';
 import { createStarField } from '../models/misc/StarField.js';
 import { createSun } from '../models/misc/Sun.js';
-import { createStandardEnemy } from '../models/enemies/StandardEnemy.js';
-import { createLaserTurret } from '../models/towers/LaserTurret.js';
+import { createStandardEnemy, StandardEnemyStats } from '../models/enemies/StandardEnemy.js';
+import { createLaserTurret, LaserTurretStats } from '../models/towers/LaserTurret.js';
 import { TurretMenu } from '../ui/TurretMenu.js';
 
 export class Game {
@@ -102,10 +102,9 @@ export class Game {
     this._animFns.push(stars);
 
     // ── Sun (visual + main shadow-casting key light) ──
-    // Placed at (22, 8, -18): behind and slightly above the board, which
-    // projects to ~25° from screen centre in the upper-right — inside the
-    // camera’s 27.5° vertical half-FOV. The light direction follows the mesh.
-    const sunPos = new THREE.Vector3(22, 8, -18);
+    // Placed far away so it reads as a distant star but stays roughly
+    // upper-right in the camera's field of view.
+    const sunPos = new THREE.Vector3(120, 80, -100);
     const sun = createSun();
     sun.mesh.position.copy(sunPos);
     sc.add(sun.mesh);
@@ -250,8 +249,8 @@ export class Game {
       if (this._towers.some(t => Math.abs(t.gx - gx) < 1 && Math.abs(t.gz - gz) < 1)) return;
 
       // Cost
-      if (!this._state.spendStardust(this._config.laserTowerCost)) {
-        this._hud.showMsg(`Need ${this._config.laserTowerCost} stardust!`);
+      if (!this._state.spendStardust(LaserTurretStats.cost)) {
+        this._hud.showMsg(`Need ${LaserTurretStats.cost} stardust!`);
         return;
       }
 
@@ -296,13 +295,13 @@ export class Game {
       _animRef: turret,
       gx, gz,
       fireTimer: 0,
-      fireRate: this._config.laserTowerFireRate,
-      range: this._config.laserTowerRange,
-      damage: this._config.laserTowerDamage,
+      fireRate: LaserTurretStats.fireRate,
+      range: LaserTurretStats.range,
+      damage: LaserTurretStats.damage,
       target: null,
       // Metadata for TurretMenu
       name: turret.name,
-      cost: this._config.laserTowerCost,
+      cost: LaserTurretStats.cost,
       targeting: 'closest',   // 'closest' | 'first'
     };
     this._towers.push(towerData);
@@ -396,8 +395,8 @@ export class Game {
     this._scene.add(e.mesh);
     this._animFns.push(e);
 
-    const hp = this._config.enemyBaseHP;
-    const speed = this._config.enemyBaseSpeed;
+    const hp = StandardEnemyStats.hp;
+    const speed = StandardEnemyStats.speed;
 
     // Keep reference to the animFn entry so we can splice it later
     this._enemies.push({
@@ -436,11 +435,12 @@ export class Game {
         e.alive = false;
         e.reachedEnd = true;
         e.triggerExplode(
-          () => { this._state.damageNexus(this._config.enemyBaseDamage); }, // onHit: fires when burst starts
+          () => { this._state.damageNexus(StandardEnemyStats.damage); }, // onHit: fires when burst starts
           () => { // onDone: fires when animation finishes
             this._scene.remove(e.mesh);
             const idx = this._animFns.indexOf(e._animRef);
             if (idx !== -1) this._animFns.splice(idx, 1);
+            e._done = true; // mark for removal from _enemies
           }
         );
         this._state.enemyReachedEnd(); // no stardust/score for enemies that deal damage
@@ -456,7 +456,7 @@ export class Game {
     }
 
     // Keep enemies that are still alive OR currently playing their reach/death anim
-    this._enemies = this._enemies.filter(e => e.alive || e.reachedEnd);
+    this._enemies = this._enemies.filter(e => (e.alive || e.reachedEnd) && !e._done);
   }
 
   // ── Tower combat ──────────────────────────────────────────────────────────
@@ -500,6 +500,7 @@ export class Game {
               this._scene.remove(best.mesh);
               const idx = this._animFns.indexOf(best._animRef);
               if (idx !== -1) this._animFns.splice(idx, 1);
+              best._done = true;
             });
             this._state.enemyKilled();
           }

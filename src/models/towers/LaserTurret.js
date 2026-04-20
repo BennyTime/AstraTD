@@ -20,6 +20,31 @@ import * as THREE from 'three';
  *   - shoot  : muzzle flash + recoil on barrels
  *   - track(target) : rotator.rotation.y points at target
  */
+
+export const LaserTurretStats = {
+  cost:     100,
+  range:    6,
+  damage:   15,
+  fireRate: 1.0,
+};
+
+const _tGeo = {
+  base:        new THREE.CylinderGeometry(0.72, 0.88, 0.28, 6),
+  base2:       new THREE.CylinderGeometry(0.48, 0.68, 0.2, 6),
+  rings:       [0.52, 0.46, 0.40].map(r => new THREE.TorusGeometry(r, 0.035, 8, 36)),
+  hexBorder:   new THREE.TorusGeometry(0.84, 0.04, 6, 6),
+  housing:     new THREE.CylinderGeometry(0.38, 0.44, 0.38, 8),
+  facePlate:   new THREE.BoxGeometry(0.55, 0.32, 0.12),
+  fin:         new THREE.BoxGeometry(0.06, 0.22, 0.14),
+  barrelOuter: new THREE.CylinderGeometry(0.055, 0.065, 0.75, 8),
+  barrelGlow:  new THREE.CylinderGeometry(0.022, 0.022, 0.7, 6),
+  muzzleCap:   new THREE.CylinderGeometry(0.07, 0.055, 0.08, 8),
+  flash:       new THREE.SphereGeometry(0.18, 8, 8),
+  beam:        new THREE.CylinderGeometry(0.025, 0.025, 1, 6),
+  scopeBase:   new THREE.CylinderGeometry(0.12, 0.15, 0.1, 8),
+  scopeDome:   new THREE.SphereGeometry(0.14, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+};
+
 export function createLaserTurret() {
   const group = new THREE.Group();
 
@@ -34,14 +59,13 @@ export function createLaserTurret() {
   const darkMat    = new THREE.MeshStandardMaterial({ color: 0x08111f, roughness: 0.6,  metalness: 0.7 });
 
   // ── Base platform (hex) ──
-  const baseGeo = new THREE.CylinderGeometry(0.72, 0.88, 0.28, 6);
-  const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+  const baseMesh = new THREE.Mesh(_tGeo.base, baseMat);
   baseMesh.position.y = 0.14;
   baseMesh.castShadow = baseMesh.receiveShadow = true;
   group.add(baseMesh);
 
   // Base step 2
-  const base2 = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.68, 0.2, 6), baseMat);
+  const base2 = new THREE.Mesh(_tGeo.base2, baseMat);
   base2.position.y = 0.38;
   base2.castShadow = true;
   group.add(base2);
@@ -49,8 +73,7 @@ export function createLaserTurret() {
   // Power rings on base (rotate independently)
   const powerRings = [];
   for (let i = 0; i < 3; i++) {
-    const r = 0.52 - i * 0.06;
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(r, 0.035, 8, 36), ringMat.clone());
+    const ring = new THREE.Mesh(_tGeo.rings[i], ringMat.clone());
     ring.position.y = 0.44 + i * 0.07;
     ring.rotation.x = Math.PI / 2;
     group.add(ring);
@@ -58,7 +81,7 @@ export function createLaserTurret() {
   }
 
   // Base accent hex border
-  const hexBorder = new THREE.Mesh(new THREE.TorusGeometry(0.84, 0.04, 6, 6), accentMat);
+  const hexBorder = new THREE.Mesh(_tGeo.hexBorder, accentMat);
   hexBorder.rotation.x = Math.PI / 2;
   hexBorder.position.y = 0.14;
   group.add(hexBorder);
@@ -69,19 +92,19 @@ export function createLaserTurret() {
   group.add(rotator);
 
   // Main housing cylinder
-  const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.44, 0.38, 8), bodyMat);
+  const housing = new THREE.Mesh(_tGeo.housing, bodyMat);
   housing.castShadow = true;
   rotator.add(housing);
 
   // Front face plate
-  const facePlate = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.32, 0.12), darkMat);
+  const facePlate = new THREE.Mesh(_tGeo.facePlate, darkMat);
   facePlate.position.set(0, 0, 0.4);
   rotator.add(facePlate);
 
   // Side cooling fins
   [-1, 1].forEach(sign => {
     for (let i = 0; i < 3; i++) {
-      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.14), darkMat);
+      const fin = new THREE.Mesh(_tGeo.fin, darkMat);
       fin.position.set(sign * (0.44 + i * 0.065), 0, -0.08 - i * 0.06);
       rotator.add(fin);
     }
@@ -95,20 +118,20 @@ export function createLaserTurret() {
   const barrels = [];
   [-0.1, 0.1].forEach(ox => {
     // Outer barrel tube
-    const outer = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.75, 8), barrelMat);
+    const outer = new THREE.Mesh(_tGeo.barrelOuter, barrelMat);
     outer.rotation.x = Math.PI / 2;
     outer.position.set(ox, 0, 0.375);
     outer.castShadow = true;
     barrelPivot.add(outer);
 
     // Energy channel glow along barrel
-    const glow = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.7, 6), scopeMat.clone());
+    const glow = new THREE.Mesh(_tGeo.barrelGlow, scopeMat.clone());
     glow.rotation.x = Math.PI / 2;
     glow.position.set(ox, 0, 0.37);
     barrelPivot.add(glow);
 
     // Muzzle cap
-    const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.08, 8), darkMat);
+    const muzzle = new THREE.Mesh(_tGeo.muzzleCap, darkMat);
     muzzle.rotation.x = Math.PI / 2;
     muzzle.position.set(ox, 0, 0.79);
     barrelPivot.add(muzzle);
@@ -117,12 +140,11 @@ export function createLaserTurret() {
   });
 
   // ── Muzzle flash (shown briefly on fire) ──
-  const flashGeo = new THREE.SphereGeometry(0.18, 8, 8);
-  const flashL = new THREE.Mesh(flashGeo, flashMat.clone());
+  const flashL = new THREE.Mesh(_tGeo.flash, flashMat.clone());
   flashL.position.set(-0.1, 0, 0.85);
   flashL.visible = false;
   barrelPivot.add(flashL);
-  const flashR = new THREE.Mesh(flashGeo, flashMat.clone());
+  const flashR = new THREE.Mesh(_tGeo.flash, flashMat.clone());
   flashR.position.set( 0.1, 0, 0.85);
   flashR.visible = false;
   barrelPivot.add(flashR);
@@ -131,24 +153,19 @@ export function createLaserTurret() {
   const beamMat = new THREE.MeshStandardMaterial({
     color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 3, transparent: true, opacity: 0,
   });
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1, 6), beamMat);
+  const beam = new THREE.Mesh(_tGeo.beam, beamMat);
   beam.rotation.x = Math.PI / 2;
   beam.position.set(0, 0, 1.4);
   barrelPivot.add(beam);
   // beam length is adjusted at shoot time
 
   // ── Scope / sensor dome ──
-  const scopeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.1, 8), bodyMat);
+  const scopeBase = new THREE.Mesh(_tGeo.scopeBase, bodyMat);
   scopeBase.position.set(0, 0.22, 0.1);
   rotator.add(scopeBase);
-  const scopeDome = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), scopeMat);
+  const scopeDome = new THREE.Mesh(_tGeo.scopeDome, scopeMat);
   scopeDome.position.set(0, 0.27, 0.1);
   rotator.add(scopeDome);
-
-  // ── Turret light ──
-  const turretLight = new THREE.PointLight(0x46d4ff, 0.6, 4);
-  turretLight.position.set(0, 0.3, 0.4);
-  rotator.add(turretLight);
 
   // ── State ─────────────────────────────────────────────────────────────
   let spawnTimer   = 0;
@@ -216,7 +233,6 @@ export function createLaserTurret() {
       r.rotation.z += delta * (0.9 + i * 0.4) * (i % 2 === 0 ? 1 : -1);
     });
     scopeDome.rotation.y += delta * 1.2;
-    turretLight.intensity = 0.5 + Math.sin(t * 2) * 0.15;
 
     // ── Shoot animation ──
     if (shootTimer < 0.35) {

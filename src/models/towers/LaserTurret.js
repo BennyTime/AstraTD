@@ -22,41 +22,41 @@ import * as THREE from 'three';
  */
 
 export const LaserTurretStats = {
-  cost:     100,
-  range:    6,
-  damage:   15,
+  cost: 100,
+  range: 6,
+  damage: 15,
   fireRate: 1.0,
 };
 
 const _tGeo = {
-  base:        new THREE.CylinderGeometry(0.72, 0.88, 0.28, 6),
-  base2:       new THREE.CylinderGeometry(0.48, 0.68, 0.2, 6),
-  rings:       [0.52, 0.46, 0.40].map(r => new THREE.TorusGeometry(r, 0.035, 8, 36)),
-  hexBorder:   new THREE.TorusGeometry(0.84, 0.04, 6, 6),
-  housing:     new THREE.CylinderGeometry(0.38, 0.44, 0.38, 8),
-  facePlate:   new THREE.BoxGeometry(0.55, 0.32, 0.12),
-  fin:         new THREE.BoxGeometry(0.06, 0.22, 0.14),
+  base: new THREE.CylinderGeometry(0.72, 0.88, 0.28, 6),
+  base2: new THREE.CylinderGeometry(0.48, 0.68, 0.2, 6),
+  rings: [0.52, 0.46, 0.40].map(r => new THREE.TorusGeometry(r, 0.035, 8, 36)),
+  hexBorder: new THREE.TorusGeometry(0.84, 0.04, 6, 6),
+  housing: new THREE.CylinderGeometry(0.38, 0.44, 0.38, 8),
+  facePlate: new THREE.BoxGeometry(0.55, 0.32, 0.12),
+  fin: new THREE.BoxGeometry(0.06, 0.22, 0.14),
   barrelOuter: new THREE.CylinderGeometry(0.055, 0.065, 0.75, 8),
-  barrelGlow:  new THREE.CylinderGeometry(0.022, 0.022, 0.7, 6),
-  muzzleCap:   new THREE.CylinderGeometry(0.07, 0.055, 0.08, 8),
-  flash:       new THREE.SphereGeometry(0.18, 8, 8),
-  beam:        new THREE.CylinderGeometry(0.025, 0.025, 1, 6),
-  scopeBase:   new THREE.CylinderGeometry(0.12, 0.15, 0.1, 8),
-  scopeDome:   new THREE.SphereGeometry(0.14, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+  barrelGlow: new THREE.CylinderGeometry(0.022, 0.022, 0.7, 6),
+  muzzleCap: new THREE.CylinderGeometry(0.07, 0.055, 0.08, 8),
+  flash: new THREE.SphereGeometry(0.18, 8, 8),
+  beam: new THREE.CylinderGeometry(0.025, 0.025, 1, 6),
+  scopeBase: new THREE.CylinderGeometry(0.12, 0.15, 0.1, 8),
+  scopeDome: new THREE.SphereGeometry(0.14, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
 };
 
 export function createLaserTurret() {
   const group = new THREE.Group();
 
   // ── Materials ──────────────────────────────────────────────────────────
-  const baseMat    = new THREE.MeshStandardMaterial({ color: 0x0e1226, roughness: 0.45, metalness: 0.9 });
-  const bodyMat    = new THREE.MeshStandardMaterial({ color: 0x162040, roughness: 0.35, metalness: 0.85 });
-  const barrelMat  = new THREE.MeshStandardMaterial({ color: 0x0b0e1a, roughness: 0.3,  metalness: 1.0 });
-  const ringMat    = new THREE.MeshStandardMaterial({ color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 1.5, roughness: 0.2 });
-  const accentMat  = new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: new THREE.Color(0x00aaff), emissiveIntensity: 1.0, roughness: 0.25 });
-  const scopeMat   = new THREE.MeshStandardMaterial({ color: 0x00e0ff, emissive: new THREE.Color(0x00e0ff), emissiveIntensity: 1.8, transparent: true, opacity: 0.85 });
-  const flashMat   = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 4, transparent: true, opacity: 0 });
-  const darkMat    = new THREE.MeshStandardMaterial({ color: 0x08111f, roughness: 0.6,  metalness: 0.7 });
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x0e1226, roughness: 0.45, metalness: 0.9 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x162040, roughness: 0.35, metalness: 0.85 });
+  const barrelMat = new THREE.MeshStandardMaterial({ color: 0x0b0e1a, roughness: 0.3,  metalness: 1.0 });
+  const ringMat = new THREE.MeshStandardMaterial({ color: 0x46d4ff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 1.5, roughness: 0.2 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, emissive: new THREE.Color(0x00aaff), emissiveIntensity: 1.0, roughness: 0.25 });
+  const scopeMat = new THREE.MeshStandardMaterial({ color: 0x00e0ff, emissive: new THREE.Color(0x00e0ff), emissiveIntensity: 1.8, transparent: true, opacity: 0.85 });
+  const flashMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: new THREE.Color(0x46d4ff), emissiveIntensity: 4, transparent: true, opacity: 0 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x08111f, roughness: 0.6,  metalness: 0.7 });
 
   // ── Base platform (hex) ──
   const baseMesh = new THREE.Mesh(_tGeo.base, baseMat);
@@ -168,17 +168,17 @@ export function createLaserTurret() {
   rotator.add(scopeDome);
 
   // ── State ─────────────────────────────────────────────────────────────
-  let spawnTimer   = 0;
-  let spawnDone    = false;
-  let shootTimer   = 0.35;  // start past threshold so shoot doesn't auto-trigger
-  let t            = 0;
+  let spawnTimer = 0;
+  let spawnDone = false;
+  let shootTimer = 0.35;
+  let t = 0;
 
   // Start spawning (scale from 0)
   group.scale.setScalar(0);
 
   function triggerSpawn() {
     spawnTimer = 0;
-    spawnDone  = false;
+    spawnDone = false;
     group.scale.setScalar(0);
   }
 
@@ -192,10 +192,10 @@ export function createLaserTurret() {
 
     // Aim beam toward target
     if (targetPos) {
-      const origin   = new THREE.Vector3();
+      const origin = new THREE.Vector3();
       rotator.getWorldPosition(origin);
-      const dist     = origin.distanceTo(targetPos);
-      beam.scale.z   = dist * 1.3;
+      const dist = origin.distanceTo(targetPos);
+      beam.scale.z = dist * 1.3;
       beamMat.opacity = 0.9;
     }
 

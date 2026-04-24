@@ -18,12 +18,9 @@ export const GameConfig = {
     [11, 0, 5],
   ],
 
-  // Waves
-  totalWaves: 5,
+  // Waves  (composition is defined in WaveConfig.js)
+  totalWaves: 10,
   waveCooldown: 5000,
-  enemiesPerWave: 6,
-  enemiesPerWaveGrow: 2,
-  spawnInterval: 1200,
 
   // Economy
   startingStardust: 200,

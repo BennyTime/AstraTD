@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GameConfig } from '../config/GameConfig.js';
+import { WaveConfig } from '../config/WaveConfig.js';
 import { GameState } from './GameState.js';
 import { HUD } from '../ui/HUD.js';
 import { NavigationMenu } from '../ui/NavigationMenu.js';
@@ -10,8 +11,27 @@ import { createCrystalCluster, createFloatingCrystal } from '../models/misc/Floa
 import { createStarField } from '../models/misc/StarField.js';
 import { createSun } from '../models/misc/Sun.js';
 import { createStandardEnemy, StandardEnemyStats } from '../models/enemies/StandardEnemy.js';
+import { createFastEnemy, FastEnemyStats } from '../models/enemies/FastEnemy.js';
+import { createTankEnemy, TankEnemyStats } from '../models/enemies/TankEnemy.js';
+import { createHealerEnemy, HealerEnemyStats } from '../models/enemies/HealerEnemy.js';
+import { createDisruptorEnemy, DisruptorEnemyStats } from '../models/enemies/DisruptorEnemy.js';
+import { createEximusEnemy, EximusEnemyStats } from '../models/enemies/EximusEnemy.js';
+import { createDuckEnemy, DuckEnemyStats } from '../models/enemies/DuckEnemy.js';
+import { createBossEnemy, BossEnemyStats } from '../models/enemies/BossEnemy.js';
 import { createLaserTurret, LaserTurretStats } from '../models/towers/LaserTurret.js';
 import { TurretMenu } from '../ui/TurretMenu.js';
+
+// Lookup table: type string → { create, stats }
+const ENEMY_FACTORIES = {
+  standard: { create: createStandardEnemy, stats: StandardEnemyStats },
+  fast: { create: createFastEnemy, stats: FastEnemyStats },
+  tank: { create: createTankEnemy, stats: TankEnemyStats },
+  healer: { create: createHealerEnemy, stats: HealerEnemyStats },
+  disruptor: { create: createDisruptorEnemy, stats: DisruptorEnemyStats },
+  eximus: { create: createEximusEnemy, stats: EximusEnemyStats },
+  duck: { create: createDuckEnemy, stats: DuckEnemyStats },
+  boss: { create: createBossEnemy, stats: BossEnemyStats },
+};
 
 export class Game {
   constructor({ mountElement, hudElement }) {
@@ -25,6 +45,9 @@ export class Game {
     this._clock = new THREE.Clock(false);
     this._spawnQueue = 0;
     this._spawnAccum = 0;
+    this._spawnTypeQueue = [];   // ordered list of type strings for current wave
+    this._spawnInterval = 1200; // ms; overridden per wave
+    this._deferredSpawns = [];   // { type, pathT } queued mid-frame (eximus children)
   }
 
   // ── Bootstrap ────────────────────────────────────────────────────────────
@@ -363,6 +386,7 @@ export class Game {
       this._updateSpawning(delta);
       this._updateEnemies(delta);
       this._updateTowers(delta);
+      this._flushDeferredSpawns();
     }
   }
 
@@ -370,8 +394,20 @@ export class Game {
 
   _startWave() {
     if (this._state.phase !== 'build' && this._state.phase !== 'menu') return;
-    this._state.startWave();
-    this._spawnQueue = this._state.enemiesLeft;
+
+    // Build flat type queue from WaveConfig (0-indexed, wave hasn't incremented yet)
+    const waveDef = WaveConfig[this._state.wave];
+    if (!waveDef) return;
+
+    this._spawnTypeQueue = [];
+    for (const seg of waveDef.enemies) {
+      for (let i = 0; i < seg.count; i++) this._spawnTypeQueue.push(seg.type);
+    }
+    this._spawnInterval = waveDef.spawnInterval;
+
+    const total = this._spawnTypeQueue.length;
+    this._state.startWave(total);
+    this._spawnQueue = total;
     this._spawnAccum = 0;
     this._cargoShip.openBay();
     this._hud.showMsg(`Wave ${this._state.wave} — Incoming!`, 2000);
@@ -380,8 +416,8 @@ export class Game {
   _updateSpawning(delta) {
     if (this._spawnQueue <= 0) return;
     this._spawnAccum += delta * 1000;
-    if (this._spawnAccum >= this._config.spawnInterval) {
-      this._spawnAccum -= this._config.spawnInterval;
+    if (this._spawnAccum >= this._spawnInterval) {
+      this._spawnAccum -= this._spawnInterval;
       this._spawnEnemy();
     }
   }
@@ -390,33 +426,56 @@ export class Game {
     if (this._spawnQueue <= 0) return;
     this._spawnQueue--;
 
-    const e = createStandardEnemy();
-    e.mesh.position.set(-12, this._config.boardY + 0.3, 0);
+    const type = this._spawnTypeQueue.shift() || 'standard';
+    this._spawnEnemyAt(type, 0);
+
+    if (this._spawnQueue <= 0) {
+      setTimeout(() => this._cargoShip.closeBay(), 800);
+    }
+  }
+
+  // Spawn any enemy type at a given path position (0–1).
+  // Used for the initial wave spawn and for Eximus on-death child spawns.
+  _spawnEnemyAt(type, startPathT) {
+    const factory = ENEMY_FACTORIES[type] || ENEMY_FACTORIES.standard;
+    const e = factory.create();
+    const startPos = this._pathCurve.getPointAt(Math.min(Math.max(startPathT, 0), 0.999));
+    e.mesh.position.copy(startPos);
     this._scene.add(e.mesh);
     this._animFns.push(e);
 
-    const hp = StandardEnemyStats.hp;
-    const speed = StandardEnemyStats.speed;
-
-    // Keep reference to the animFn entry so we can splice it later
-    this._enemies.push({
+    const { hp, speed, damage, reward } = factory.stats;
+    const enemyRecord = {
       mesh: e.mesh,
       update: e.update,
       triggerDeath: e.triggerDeath,
       triggerExplode: e.triggerExplode,
       setWalk: e.setWalk,
-      _animRef: e, // reference to entry in _animFns
-      pathT: 0,
+      _animRef: e,
+      pathT: startPathT,
       speed,
       hp,
       maxHp: hp,
+      damage,
+      reward,
+      stats: factory.stats,
       alive: true,
       reachedEnd: false,
-    });
-
-    if (this._spawnQueue <= 0) {
-      setTimeout(() => this._cargoShip.closeBay(), 800);
+      healAccum: 0,
+    };
+    if (factory.stats.type === 'boss') {
+      enemyRecord.bossSpawnThreshold = hp - 250;
     }
+    this._enemies.push(enemyRecord);
+  }
+
+  // Process Eximus child-spawns deferred from last frame.
+  _flushDeferredSpawns() {
+    if (!this._deferredSpawns.length) return;
+    this._deferredSpawns.forEach(({ type, pathT }) => {
+      this._spawnEnemyAt(type, pathT);
+    });
+    this._deferredSpawns = [];
   }
 
   // ── Enemy update ──────────────────────────────────────────────────────────
@@ -434,17 +493,32 @@ export class Game {
         // Reached nexus – explode and damage
         e.alive = false;
         e.reachedEnd = true;
+        const nexusDamage = e.damage;
         e.triggerExplode(
-          () => { this._state.damageNexus(StandardEnemyStats.damage); }, // onHit: fires when burst starts
-          () => { // onDone: fires when animation finishes
+          () => { this._state.damageNexus(nexusDamage); },
+          () => {
             this._scene.remove(e.mesh);
             const idx = this._animFns.indexOf(e._animRef);
             if (idx !== -1) this._animFns.splice(idx, 1);
-            e._done = true; // mark for removal from _enemies
+            e._done = true;
           }
         );
-        this._state.enemyReachedEnd(); // no stardust/score for enemies that deal damage
+        this._state.enemyReachedEnd();
         continue;
+      }
+
+      // Healer: periodically restore HP to nearby living allies
+      if (e.stats?.type === 'healer' && e.alive) {
+        e.healAccum += delta;
+        if (e.healAccum >= e.stats.healCooldown) {
+          e.healAccum = 0;
+          for (const other of this._enemies) {
+            if (!other.alive || other === e) continue;
+            if (e.mesh.position.distanceTo(other.mesh.position) < e.stats.healRadius) {
+              other.hp = Math.min(other.maxHp, other.hp + e.stats.healAmount);
+            }
+          }
+        }
       }
 
       const pos = this._pathCurve.getPointAt(e.pathT);
@@ -464,6 +538,16 @@ export class Game {
   _updateTowers(delta) {
     for (const tower of this._towers) {
       tower.fireTimer -= delta;
+
+      // Check if any Disruptor is within disruption range of this tower
+      let disrupted = false;
+      for (const dis of this._enemies) {
+        if (!dis.alive || dis.stats?.type !== 'disruptor') continue;
+        if (dis.mesh.position.distanceTo(tower.mesh.position) < dis.stats.disruptRadius) {
+          disrupted = true;
+          break;
+        }
+      }
 
       // Find target based on targeting mode
       let best = null;
@@ -490,19 +574,46 @@ export class Game {
       if (best) {
         tower.trackTarget(best.mesh.position);
         if (tower.fireTimer <= 0) {
-          tower.fireTimer = 1 / tower.fireRate;
+          // Disruptors slow tower fire rate to 35 %
+          tower.fireTimer = 1 / (disrupted ? tower.fireRate * 0.35 : tower.fireRate);
           tower.triggerShoot(best.mesh.position);
 
-          best.hp -= tower.damage;
+          // Immune enemies (e.g. the Duck) cannot be damaged
+          if (!best.stats?.immune) {
+            best.hp -= tower.damage;
+          }
+          // Boss: spawn a random minion every 250 HP lost
+          if (best.stats?.type === 'boss' && best.alive && best.bossSpawnThreshold !== undefined) {
+            while (best.hp <= best.bossSpawnThreshold && best.bossSpawnThreshold > 0) {
+              const _BOSS_MINION_TYPES = ['fast', 'tank', 'healer', 'disruptor', 'eximus'];
+              const minionType = _BOSS_MINION_TYPES[Math.floor(Math.random() * _BOSS_MINION_TYPES.length)];
+              this._deferredSpawns.push({ type: minionType, pathT: Math.max(0, best.pathT - 0.01) });
+              this._state.enemiesLeft += 1;
+              best.bossSpawnThreshold -= 250;
+            }
+          }
           if (best.hp <= 0) {
             best.alive = false;
+
+            // Eximus: queue child spawns BEFORE decrementing enemiesLeft
+            if (best.stats?.spawnOnDeath) {
+              const n = best.stats.spawnOnDeath;
+              const pt = best.pathT;
+              for (let s = 0; s < n; s++) {
+                this._deferredSpawns.push({ type: 'standard', pathT: Math.max(0, pt - s * 0.005) });
+              }
+              // Keep enemiesLeft accurate so the wave doesn't end prematurely
+              this._state.enemiesLeft += n;
+            }
+
+            const reward = best.reward;
             best.triggerDeath(() => {
               this._scene.remove(best.mesh);
               const idx = this._animFns.indexOf(best._animRef);
               if (idx !== -1) this._animFns.splice(idx, 1);
               best._done = true;
             });
-            this._state.enemyKilled();
+            this._state.enemyKilled(reward);
           }
         }
       }

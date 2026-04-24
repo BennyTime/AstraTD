@@ -25,34 +25,34 @@ import * as THREE from 'three';
  */
 
 export const StandardEnemyStats = {
-  hp:     60,
-  speed:  2,
+  hp: 60,
+  speed: 2,
   damage: 20, // nexus damage on reach
   reward: 25,  // stardust on kill
 };
 
 const _geo = {
-  torso:       new THREE.BoxGeometry(0.55, 0.55, 0.32),
-  chestPlate:  new THREE.BoxGeometry(0.22, 0.38, 0.1),
-  chestGlow:   new THREE.CylinderGeometry(0.07, 0.07, 0.12, 12),
-  head:        new THREE.BoxGeometry(0.38, 0.32, 0.3),
-  visor:       new THREE.BoxGeometry(0.3, 0.1, 0.06),
-  antenna:     new THREE.CylinderGeometry(0.015, 0.015, 0.22, 5),
-  antTip:      new THREE.SphereGeometry(0.04, 6, 6),
+  torso: new THREE.BoxGeometry(0.55, 0.55, 0.32),
+  chestPlate: new THREE.BoxGeometry(0.22, 0.38, 0.1),
+  chestGlow: new THREE.CylinderGeometry(0.07, 0.07, 0.12, 12),
+  head: new THREE.BoxGeometry(0.38, 0.32, 0.3),
+  visor: new THREE.BoxGeometry(0.3, 0.1, 0.06),
+  antenna: new THREE.CylinderGeometry(0.015, 0.015, 0.22, 5),
+  antTip: new THREE.SphereGeometry(0.04, 6, 6),
   shoulderPad: new THREE.BoxGeometry(0.14, 0.14, 0.22),
-  upperArm:    new THREE.BoxGeometry(0.12, 0.28, 0.12),
-  elbow:       new THREE.SphereGeometry(0.065, 8, 8),
-  lowerArm:    new THREE.BoxGeometry(0.1, 0.25, 0.1),
-  fist:        new THREE.BoxGeometry(0.12, 0.1, 0.12),
-  pelvis:      new THREE.BoxGeometry(0.44, 0.2, 0.28),
-  booster:     new THREE.BoxGeometry(0.3, 0.45, 0.15),
+  upperArm: new THREE.BoxGeometry(0.12, 0.28, 0.12),
+  elbow: new THREE.SphereGeometry(0.065, 8, 8),
+  lowerArm: new THREE.BoxGeometry(0.1, 0.25, 0.1),
+  fist: new THREE.BoxGeometry(0.12, 0.1, 0.12),
+  pelvis: new THREE.BoxGeometry(0.44, 0.2, 0.28),
+  booster: new THREE.BoxGeometry(0.3, 0.45, 0.15),
   boosterGlow: new THREE.CylinderGeometry(0.05, 0.07, 0.1, 8),
-  upperLeg:    new THREE.BoxGeometry(0.15, 0.3, 0.15),
-  knee:        new THREE.SphereGeometry(0.08, 8, 8),
-  lowerLeg:    new THREE.BoxGeometry(0.13, 0.28, 0.13),
-  foot:        new THREE.BoxGeometry(0.14, 0.1, 0.22),
-  kneeStrip:   new THREE.BoxGeometry(0.13, 0.04, 0.06),
-  shard:       new THREE.IcosahedronGeometry(0.08, 0),
+  upperLeg: new THREE.BoxGeometry(0.15, 0.3, 0.15),
+  knee: new THREE.SphereGeometry(0.08, 8, 8),
+  lowerLeg: new THREE.BoxGeometry(0.13, 0.28, 0.13),
+  foot: new THREE.BoxGeometry(0.14, 0.1, 0.22),
+  kneeStrip: new THREE.BoxGeometry(0.13, 0.04, 0.06),
+  shard: new THREE.IcosahedronGeometry(0.08, 0),
 };
 
 export function createStandardEnemy() {
@@ -230,7 +230,7 @@ export function createStandardEnemy() {
     s.position.set(0, 0.9, 0);
     const theta = Math.random() * Math.PI * 2;
     const phi = Math.random() * Math.PI;
-    const spd   = 2 + Math.random() * 4;
+    const spd = 2 + Math.random() * 4;
     s.userData.vel = new THREE.Vector3(
       Math.sin(phi) * Math.cos(theta) * spd,
       Math.cos(phi) * spd + 1,
@@ -250,11 +250,11 @@ export function createStandardEnemy() {
   let walkPhase = 0;
   let deathTimer = 0;
   let breakReady = false;
-  let breakParts = [];      // pieces flying after death break
+  let breakParts = [];
   let explodeTime = 0;
   let t = 0;
 
-  const JOY_DURATION = 1; // celebration before the explosion
+  const JOY_DURATION = 1;
 
   function setWalk() { state = 'walk'; }
 

@@ -45,9 +45,9 @@ export class GameState {
     return true;
   }
 
-  enemyKilled() {
+  enemyKilled(reward = 0) {
     this.score += 10;
-    this.addStardust(this.config.killReward);
+    if (reward > 0) this.addStardust(reward);
     this.enemiesLeft = Math.max(0, this.enemiesLeft - 1);
     this.emit('enemyKilled', { enemiesLeft: this.enemiesLeft });
     if (this.enemiesLeft <= 0 && this.phase === 'combat') {
@@ -76,10 +76,10 @@ export class GameState {
     }
   }
 
-  startWave() {
+  startWave(enemyCount) {
     const c = this.config;
     this.wave++;
-    this.enemiesLeft = c.enemiesPerWave + (this.wave - 1) * c.enemiesPerWaveGrow;
+    this.enemiesLeft = enemyCount;
     this.phase = 'combat';
     this.emit('waveStarted', { wave: this.wave, total: this.enemiesLeft });
   }

@@ -2,48 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Standard Enemy – Astra TD Preview</title>
+  <title>Enemy Preview – Astra TD</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; background: #020408; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #d8f1ff; }
     canvas { display: block; }
     #label {
       position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-      color: #ff2060; font-size: 11px; letter-spacing: 0.25em; font-weight: 700;
+      font-size: 11px; letter-spacing: 0.25em; font-weight: 700;
       background: rgba(6,10,22,0.7); padding: 6px 16px; border-radius: 6px;
-      border: 1px solid rgba(255,32,96,0.3);
     }
+    #type-bar {
+      position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 6px;
+      background: rgba(6,10,22,0.85); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 8px 14px; backdrop-filter: blur(6px);
+    }
+    #type-bar button {
+      background: rgba(255,255,255,0.06); color: #9ab8cc;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px; padding: 5px 13px; font-size: 11px;
+      letter-spacing: 0.08em; cursor: pointer; transition: background .18s, color .18s;
+    }
+    #type-bar button:hover  { background: rgba(255,255,255,0.12); color: #d8f1ff; }
+    #type-bar button.active { color: #fff; font-weight: 700; }
     #ctrl {
       position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
       display: flex; gap: 10px;
-      background: rgba(6,10,22,0.85); border: 1px solid rgba(255,32,96,0.3);
+      background: rgba(6,10,22,0.85); border: 1px solid rgba(255,255,255,0.12);
       border-radius: 10px; padding: 10px 18px; backdrop-filter: blur(6px);
     }
-    button {
-      background: rgba(255,32,96,0.1); color: #d8f1ff; border: 1px solid rgba(255,32,96,0.4);
-      border-radius: 6px; padding: 7px 18px; font-size: 12px; letter-spacing: 0.1em; cursor: pointer;
-      transition: background .2s;
+    #ctrl button {
+      background: rgba(255,255,255,0.06); color: #d8f1ff;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 6px; padding: 7px 18px; font-size: 12px;
+      letter-spacing: 0.1em; cursor: pointer; transition: background .2s;
     }
-    button:hover { background: rgba(255,32,96,0.22); }
-    button.blue { border-color: rgba(70,212,255,0.4); }
-    button.blue:hover { background: rgba(70,212,255,0.15); }
+    #ctrl button:hover  { background: rgba(255,255,255,0.12); }
+    #ctrl button.accent { border-color: rgba(70,212,255,0.4); }
+    #ctrl button.accent:hover { background: rgba(70,212,255,0.12); }
   </style>
 </head>
 <body>
-  <div id="label">STANDARD ENEMY MODEL PREVIEW</div>
+  <div id="label">ENEMY MODEL PREVIEW</div>
+
+  <!-- Type selector -->
+  <div id="type-bar">
+    <button data-type="standard">STANDARD</button>
+    <button data-type="fast">FAST</button>
+    <button data-type="tank">TANK</button>
+    <button data-type="healer">HEALER</button>
+    <button data-type="disruptor">DISRUPTOR</button>
+    <button data-type="eximus">EXIMUS</button>
+    <button data-type="duck">DUCK</button>
+    <button data-type="boss">BOSS</button>
+  </div>
+
+  <!-- Animation controls -->
   <div id="ctrl">
-    <button id="btn-walk" class="blue">WALK</button>
+    <button id="btn-walk" class="accent">WALK</button>
     <button id="btn-death">DEATH</button>
     <button id="btn-explode">EXPLODE</button>
-    <button id="btn-reset" class="blue">RESET</button>
+    <button id="btn-reset" class="accent">RESET</button>
   </div>
 
   <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.162.0/build/three.module.js"}}</script>
   <script type="module">
     import * as THREE from 'three';
-    import { createStandardEnemy } from './StandardEnemy.js';
-    import { createStarField }     from '../misc/StarField.js';
+    import { createStandardEnemy  } from './StandardEnemy.js';
+    import { createFastEnemy      } from './FastEnemy.js';
+    import { createTankEnemy      } from './TankEnemy.js';
+    import { createHealerEnemy    } from './HealerEnemy.js';
+    import { createDisruptorEnemy } from './DisruptorEnemy.js';
+    import { createEximusEnemy    } from './EximusEnemy.js';
+    import { createDuckEnemy      } from './DuckEnemy.js';
+    import { createBossEnemy      } from './BossEnemy.js';
+    import { createStarField      } from '../misc/StarField.js';
 
+    // ── Accent colours and display names per type ─────────────────────────
+    const TYPE_META = {
+      standard:  { color: '#ff2060', name: 'STANDARD ENEMY'  },
+      fast:      { color: '#00e5ff', name: 'FAST ENEMY'       },
+      tank:      { color: '#ff5500', name: 'TANK ENEMY'        },
+      healer:    { color: '#44ff88', name: 'HEALER ENEMY'      },
+      disruptor: { color: '#ffcc00', name: 'DISRUPTOR ENEMY'   },
+      eximus:    { color: '#44ffee', name: 'EXIMUS ENEMY'      },
+      duck:      { color: '#ffdd00', name: 'THE DUCK'          },
+      boss:      { color: '#ff3300', name: 'EXIMUS, FATHER OF THE VALKEN' },
+    };
+
+    const FACTORIES = {
+      standard:  createStandardEnemy,
+      fast:      createFastEnemy,
+      tank:      createTankEnemy,
+      healer:    createHealerEnemy,
+      disruptor: createDisruptorEnemy,
+      eximus:    createEximusEnemy,
+      duck:      createDuckEnemy,
+      boss:      createBossEnemy,
+    };
+
+    // ── Renderer / scene ──────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(devicePixelRatio);
     renderer.shadowMap.enabled = true;
@@ -54,7 +113,6 @@
     scene.background = new THREE.Color(0x0d1a2e);
 
     const cam = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 300);
-    cam.position.set(0, 2.2, 5);
     cam.lookAt(0, 1, 0);
 
     scene.add(new THREE.AmbientLight(0x8cb8d8, 2.2));
@@ -66,8 +124,10 @@
     fill.position.set(-5, 4, -8);
     scene.add(fill);
 
-    // Floor
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0x0c1528, roughness: 0.8 }));
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(20, 20),
+      new THREE.MeshStandardMaterial({ color: 0x0c1528, roughness: 0.8 })
+    );
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
@@ -75,18 +135,52 @@
     const stars = createStarField();
     scene.add(stars.mesh);
 
-    let enemy = createStandardEnemy();
-    enemy.mesh.position.y = 0.186;
-    enemy.mesh.userData._joyBaseY = 0.186;
-    scene.add(enemy.mesh);
+    // ── Enemy instance ─────────────────────────────────────────────────────
+    let enemy = null;
+    let currentType = 'standard';
 
-    function respawn() {
-      scene.remove(enemy.mesh);
-      enemy = createStandardEnemy();
+    // Camera distance scales with enemy size
+    const CAM_DIST = { standard: 5, fast: 4.5, tank: 7, healer: 4.5, disruptor: 5, eximus: 6, duck: 4.5, boss: 10 };
+    const CAM_LOOK = { standard: 1, fast: 1,   tank: 1.4, healer: 1, disruptor: 1.2, eximus: 1.1, duck: 0.8, boss: 2.2 };
+
+    function spawnEnemy(type) {
+      if (enemy) scene.remove(enemy.mesh);
+      currentType = type;
+      enemy = FACTORIES[type]();
       enemy.mesh.position.y = 0.186;
       enemy.mesh.userData._joyBaseY = 0.186;
       scene.add(enemy.mesh);
+
+      // Update label
+      const meta = TYPE_META[type];
+      const label = document.getElementById('label');
+      label.textContent = meta.name;
+      label.style.color  = meta.color;
+      label.style.borderColor = meta.color + '55';
+
+      // Update active button style in type bar
+      document.querySelectorAll('#type-bar button').forEach(btn => {
+        const active = btn.dataset.type === type;
+        btn.classList.toggle('active', active);
+        btn.style.color       = active ? meta.color : '';
+        btn.style.borderColor = active ? meta.color + '88' : '';
+        btn.style.background  = active ? meta.color + '22' : '';
+      });
     }
+
+    // Start with Standard
+    spawnEnemy('standard');
+
+    // ── Type bar ──────────────────────────────────────────────────────────
+    document.querySelectorAll('#type-bar button').forEach(btn => {
+      btn.addEventListener('click', () => spawnEnemy(btn.dataset.type));
+    });
+
+    // ── Animation controls ────────────────────────────────────────────────
+    document.getElementById('btn-walk').addEventListener('click',    () => { spawnEnemy(currentType); enemy.setWalk(); });
+    document.getElementById('btn-death').addEventListener('click',   () => enemy.triggerDeath(() => {}));
+    document.getElementById('btn-explode').addEventListener('click', () => enemy.triggerExplode(() => {}, () => {}));
+    document.getElementById('btn-reset').addEventListener('click',   () => spawnEnemy(currentType));
 
     window.addEventListener('resize', () => {
       renderer.setSize(innerWidth, innerHeight);
@@ -94,21 +188,22 @@
       cam.updateProjectionMatrix();
     });
 
-    document.getElementById('btn-walk').addEventListener('click', () => { respawn(); enemy.setWalk(); });
-    document.getElementById('btn-death').addEventListener('click', () => enemy.triggerDeath(() => {}));
-    document.getElementById('btn-explode').addEventListener('click', () => enemy.triggerExplode(() => {}));
-    document.getElementById('btn-reset').addEventListener('click', () => respawn());
-
+    // ── Render loop ───────────────────────────────────────────────────────
     let angle = 0;
     const clock = new THREE.Clock();
     (function loop() {
       requestAnimationFrame(loop);
       const dt = clock.getDelta();
       stars.update(dt);
-      enemy.update(dt);
+      if (enemy) enemy.update(dt);
+
+      // Orbit camera at type-appropriate distance
+      const dist = CAM_DIST[currentType] ?? 5;
+      const look = CAM_LOOK[currentType] ?? 1;
       angle += dt * 0.25;
-      cam.position.set(Math.sin(angle) * 5, 2.2, Math.cos(angle) * 5);
-      cam.lookAt(0, 1, 0);
+      cam.position.set(Math.sin(angle) * dist, look * 1.5, Math.cos(angle) * dist);
+      cam.lookAt(0, look, 0);
+
       renderer.render(scene, cam);
     })();
   </script>

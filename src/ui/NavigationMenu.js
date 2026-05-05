@@ -159,7 +159,9 @@ css.textContent = `
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(ellipse at 50% 40%, #081234 0%, #02040c 100%);
+    background:
+      radial-gradient(ellipse at 50% 40%, rgba(8,18,52,0.55) 0%, rgba(2,4,12,0.75) 100%),
+      url('src/backgrounds/spaaaaaace.gif') center/cover no-repeat;
     transition: opacity .25s;
   }
   #nav-overlay.nav-hidden { display: none; }

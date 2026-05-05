@@ -333,7 +333,10 @@ export class Game {
   _initUI() {
     // HUD
     this._hud = new HUD(this._hudEl);
-    this._hud.bind(this._state, () => this._startWave());
+    this._hud.bind(this._state, () => this._startWave(), () => {
+      this._fullReset();
+      this._menu.show('main');
+    });
 
     // Bind wave-clear for HUD wave button re-enabling
     this._state.on('waveCleared', () => {
@@ -466,6 +469,9 @@ export class Game {
     if (factory.stats.type === 'boss') {
       enemyRecord.bossSpawnThreshold = hp - 250;
     }
+    if (factory.stats.type === 'boss') {
+      this._hud.showBossBar(hp, factory.stats.type);
+    }
     this._enemies.push(enemyRecord);
   }
 
@@ -493,6 +499,7 @@ export class Game {
         // Reached nexus – explode and damage
         e.alive = false;
         e.reachedEnd = true;
+        if (e.stats?.type === 'boss') this._hud.hideBossBar();
         const nexusDamage = e.damage;
         e.triggerExplode(
           () => { this._state.damageNexus(nexusDamage); },
@@ -527,6 +534,8 @@ export class Game {
       if (tangent.length() > 0.001) {
         e.mesh.rotation.y = Math.atan2(tangent.x, tangent.z);
       }
+      // Update boss bar live
+      if (e.stats?.type === 'boss') this._hud.updateBossBar(e.hp);
     }
 
     // Keep enemies that are still alive OR currently playing their reach/death anim
@@ -607,6 +616,7 @@ export class Game {
             }
 
             const reward = best.reward;
+            if (best.stats?.type === 'boss') this._hud.hideBossBar();
             best.triggerDeath(() => {
               this._scene.remove(best.mesh);
               const idx = this._animFns.indexOf(best._animRef);

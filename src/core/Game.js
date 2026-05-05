@@ -4,7 +4,7 @@ import { WaveConfig } from '../config/WaveConfig.js';
 import { GameState } from './GameState.js';
 import { HUD } from '../ui/HUD.js';
 import { NavigationMenu } from '../ui/NavigationMenu.js';
-import { createBoard } from '../models/board/Board.js';
+import { Board } from '../models/board/Board.js';
 import { createNexus } from '../models/misc/Nexus.js';
 import { createCargoShip } from '../models/misc/CargoShip.js';
 import { createCrystalCluster, createFloatingCrystal } from '../models/misc/FloatingCrystal.js';
@@ -117,7 +117,7 @@ export class Game {
 
   _buildWorld() {
     const sc = this._scene;
-    const wp = this._config.pathWaypoints;
+    const wp = this._config.activeMap.waypoints;
 
     // ── Starfield ──
     const stars = createStarField();
@@ -137,7 +137,7 @@ export class Game {
     this._animFns.push(sun);
 
     // ── Board ──
-    const board = createBoard(wp);
+    const board = new Board(this._config.activeMap);
     board.mesh.position.y = this._config.boardY;
     sc.add(board.mesh);
     this._animFns.push(board);
@@ -290,7 +290,7 @@ export class Game {
   }
 
   _isOnPath(gx, gz) {
-    const wp = this._config.pathWaypoints;
+    const wp = this._config.activeMap.waypoints;
     for (let i = 0; i < wp.length - 1; i++) {
       const ax = wp[i][0], az = wp[i][2];
       const bx = wp[i+1][0], bz = wp[i+1][2];

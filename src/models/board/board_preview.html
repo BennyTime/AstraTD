@@ -39,7 +39,7 @@
   <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.162.0/build/three.module.js"}}</script>
   <script type="module">
     import * as THREE from 'three';
-    import { createBoard } from './Board.js';
+    import { Board } from './Board.js';
     import { createStarField } from '../misc/StarField.js';
     import { GameConfig } from '../../config/GameConfig.js';
 
@@ -69,7 +69,7 @@
     const stars = createStarField();
     scene.add(stars.mesh);
 
-    const board = createBoard(GameConfig.pathWaypoints);
+    const board = new Board(GameConfig.activeMap);
     scene.add(board.mesh);
 
     window.addEventListener('resize', () => {

@@ -48,6 +48,11 @@ const _tGeo = {
 export function createLaserTurret() {
   const group = new THREE.Group();
 
+  // Scratch vectors — reused every frame to avoid GC pressure
+  const _scratchOrigin = new THREE.Vector3();
+  const _scratchFrom   = new THREE.Vector3();
+  const _scratchDir    = new THREE.Vector3();
+
   // ── Materials ──────────────────────────────────────────────────────────
   const baseMat = new THREE.MeshStandardMaterial({ color: 0x0e1226, roughness: 0.45, metalness: 0.9 });
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x162040, roughness: 0.35, metalness: 0.85 });
@@ -192,9 +197,8 @@ export function createLaserTurret() {
 
     // Aim beam toward target
     if (targetPos) {
-      const origin = new THREE.Vector3();
-      rotator.getWorldPosition(origin);
-      const dist = origin.distanceTo(targetPos);
+      rotator.getWorldPosition(_scratchOrigin);
+      const dist = _scratchOrigin.distanceTo(targetPos);
       beam.scale.z = dist * 1.3;
       beamMat.opacity = 0.9;
     }
@@ -206,10 +210,9 @@ export function createLaserTurret() {
 
   function trackTarget(targetPos) {
     if (!targetPos) return;
-    const from = new THREE.Vector3();
-    group.getWorldPosition(from);
-    const dir = new THREE.Vector3().subVectors(targetPos, from);
-    rotator.rotation.y = Math.atan2(dir.x, dir.z);
+    group.getWorldPosition(_scratchFrom);
+    _scratchDir.subVectors(targetPos, _scratchFrom);
+    rotator.rotation.y = Math.atan2(_scratchDir.x, _scratchDir.z);
   }
 
   function update(delta) {

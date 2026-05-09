@@ -19,7 +19,91 @@ import { createEximusEnemy, EximusEnemyStats } from '../models/enemies/EximusEne
 import { createDuckEnemy, DuckEnemyStats } from '../models/enemies/DuckEnemy.js';
 import { createBossEnemy, BossEnemyStats } from '../models/enemies/BossEnemy.js';
 import { createLaserTurret, LaserTurretStats } from '../models/towers/LaserTurret.js';
+import { createNovaCannon, NovaCannonStats } from '../models/towers/NovaCannon.js';
+import { createVoidSniper, VoidSniperStats } from '../models/towers/VoidSniper.js';
+import { createCryoEmitter, CryoEmitterStats } from '../models/towers/CryoEmitter.js';
 import { TurretMenu } from '../ui/TurretMenu.js';
+import { TowerShop } from '../ui/TowerShop.js';
+
+// Tower definitions (used by TowerShop and _placeTower)
+const TOWER_DEFS = [
+  {
+    key: 'laser',
+    name: 'LASER TURRET',
+    cost: LaserTurretStats.cost,
+    range: LaserTurretStats.range,
+    damage: LaserTurretStats.damage,
+    fireRate: LaserTurretStats.fireRate,
+    tag: 'Single Target',
+    color: '#46d4ff',
+    icon: '⚡',
+    description: 'Precision laser that targets single enemies.',
+    create: createLaserTurret,
+    stats: LaserTurretStats,
+    upgrades: [
+      { label: 'Focused Lens',    cost: 80,  damageMultiplier: 1.4, rangeMultiplier: 1.1, fireRateMultiplier: 1.0 },
+      { label: 'Rapid Coils',     cost: 120, damageMultiplier: 1.0, rangeMultiplier: 1.0, fireRateMultiplier: 1.5 },
+      { label: 'Overcharge Core', cost: 180, damageMultiplier: 1.8, rangeMultiplier: 1.2, fireRateMultiplier: 1.2 },
+    ],
+  },
+  {
+    key: 'nova',
+    name: 'NOVA CANNON',
+    cost: NovaCannonStats.cost,
+    range: NovaCannonStats.range,
+    damage: NovaCannonStats.damage,
+    fireRate: NovaCannonStats.fireRate,
+    tag: 'Area Damage',
+    color: '#ff8800',
+    icon: '💥',
+    description: 'Explosive blast that damages ALL enemies in range.',
+    create: createNovaCannon,
+    stats: NovaCannonStats,
+    upgrades: [
+      { label: 'Wide Blast',     cost: 100, damageMultiplier: 1.2, rangeMultiplier: 1.3, fireRateMultiplier: 1.0 },
+      { label: 'Hot Core',       cost: 150, damageMultiplier: 1.6, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
+      { label: 'Nova Surge',     cost: 220, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.4 },
+    ],
+  },
+  {
+    key: 'sniper',
+    name: 'VOID SNIPER',
+    cost: VoidSniperStats.cost,
+    range: VoidSniperStats.range,
+    damage: VoidSniperStats.damage,
+    fireRate: VoidSniperStats.fireRate,
+    tag: 'Long Range',
+    color: '#cc44ff',
+    icon: '🎯',
+    description: 'Extreme-range, high-damage precision rifle.',
+    create: createVoidSniper,
+    stats: VoidSniperStats,
+    upgrades: [
+      { label: 'Void Scope',    cost: 110, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.0 },
+      { label: 'Phase Round',   cost: 160, damageMultiplier: 1.8, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
+      { label: 'Singularity',   cost: 250, damageMultiplier: 2.0, rangeMultiplier: 1.3, fireRateMultiplier: 1.3 },
+    ],
+  },
+  {
+    key: 'cryo',
+    name: 'CRYO EMITTER',
+    cost: CryoEmitterStats.cost,
+    range: CryoEmitterStats.range,
+    damage: CryoEmitterStats.damage,
+    fireRate: CryoEmitterStats.fireRate,
+    tag: 'Area Slow',
+    color: '#88eeff',
+    icon: '❄️',
+    description: 'Pulses cryo waves that slow all nearby enemies.',
+    create: createCryoEmitter,
+    stats: CryoEmitterStats,
+    upgrades: [
+      { label: 'Deep Freeze',   cost: 90,  damageMultiplier: 1.0, rangeMultiplier: 1.3, fireRateMultiplier: 1.3 },
+      { label: 'Cryo Shards',  cost: 130, damageMultiplier: 2.0, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
+      { label: 'Absolute Zero', cost: 200, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.5 },
+    ],
+  },
+];
 
 // Lookup table: type string → { create, stats }
 const ENEMY_FACTORIES = {
@@ -48,6 +132,7 @@ export class Game {
     this._spawnTypeQueue = [];   // ordered list of type strings for current wave
     this._spawnInterval = 1200; // ms; overridden per wave
     this._deferredSpawns = [];   // { type, pathT } queued mid-frame (eximus children)
+    this._selectedTowerType = null; // currently selected tower type key from shop
   }
 
   // ── Bootstrap ────────────────────────────────────────────────────────────
@@ -127,7 +212,7 @@ export class Game {
     // ── Sun (visual + main shadow-casting key light) ──
     // Placed far away so it reads as a distant star but stays roughly
     // upper-right in the camera's field of view.
-    const sunPos = new THREE.Vector3(120, 80, -100);
+    const sunPos = new THREE.Vector3(25, 5, -40);
     const sun = createSun();
     sun.mesh.position.copy(sunPos);
     sc.add(sun.mesh);
@@ -240,8 +325,9 @@ export class Game {
           while (obj.parent && !towerMeshes.includes(obj)) obj = obj.parent;
           const tower = this._towers.find(t => t.mesh === obj);
           if (tower) {
-            this._turretMenu.show(tower, e.clientX, e.clientY, {
+            this._turretMenu.show(tower, {
               onTargetChange: (t, mode) => { t.targeting = mode; },
+              onUpgrade: (t) => { this._upgradeTower(t); this._turretMenu.refresh(); },
               onSell: (t) => { this._sellTower(t); },
             });
             return;
@@ -254,6 +340,7 @@ export class Game {
 
       // ── Tower placement (build phase only) ──
       if (this._state.phase !== 'build') return;
+      if (!this._selectedTowerType) return; // no tower selected from shop
 
       const hit = new THREE.Vector3();
       if (!raycaster.ray.intersectPlane(planeY, hit)) return;
@@ -272,12 +359,19 @@ export class Game {
       if (this._towers.some(t => Math.abs(t.gx - gx) < 1 && Math.abs(t.gz - gz) < 1)) return;
 
       // Cost
-      if (!this._state.spendStardust(LaserTurretStats.cost)) {
-        this._hud.showMsg(`Need ${LaserTurretStats.cost} stardust!`);
+      const towerDef = TOWER_DEFS.find(d => d.key === this._selectedTowerType);
+      if (!towerDef) return;
+      // Capture type now – spendStardust fires stardustChanged synchronously,
+      // which calls shop.updateStardust → _refreshAffordability → deselect(),
+      // clearing _selectedTowerType before we reach _placeTower.
+      const typeKey = this._selectedTowerType;
+      if (!this._state.spendStardust(towerDef.cost)) {
+        this._hud.showMsg(`Need ${towerDef.cost} stardust!`);
         return;
       }
 
-      this._placeTower(gx, boardY, gz);
+      this._placeTower(gx, boardY, gz, typeKey);
+      this._shop.deselect();
     });
 
     // Space bar = start wave
@@ -304,8 +398,10 @@ export class Game {
     return false;
   }
 
-  _placeTower(gx, boardY, gz) {
-    const turret = createLaserTurret();
+  _placeTower(gx, boardY, gz, typeKey) {
+    const def = TOWER_DEFS.find(d => d.key === typeKey);
+    if (!def) return;
+    const turret = def.create();
     turret.mesh.position.set(gx, boardY, gz);
     this._scene.add(turret.mesh);
     this._animFns.push(turret);
@@ -317,20 +413,39 @@ export class Game {
       trackTarget: turret.trackTarget,
       _animRef: turret,
       gx, gz,
+      type: typeKey,
       fireTimer: 0,
-      fireRate: LaserTurretStats.fireRate,
-      range: LaserTurretStats.range,
-      damage: LaserTurretStats.damage,
+      fireRate: def.stats.fireRate,
+      range: def.stats.range,
+      damage: def.stats.damage,
       target: null,
+      // Type-specific flags
+      isAoe:      !!def.stats.isAoe,
+      isAreaSlow: !!def.stats.isAreaSlow,
+      slowFactor:   def.stats.slowFactor   || 1.0,
+      slowDuration: def.stats.slowDuration || 0,
       // Metadata for TurretMenu
       name: turret.name,
-      cost: LaserTurretStats.cost,
-      targeting: 'closest',   // 'closest' | 'first'
+      cost: def.stats.cost,
+      totalSpent: def.stats.cost,
+      level: 0,
+      upgrades: def.upgrades,
+      targeting: 'closest',
     };
     this._towers.push(towerData);
+    // Keep the shop stardust display current
+    this._shop?.updateStardust(this._state.stardust);
   }
 
   _initUI() {
+    // Tower Shop (bottom bar)
+    this._shop = new TowerShop(TOWER_DEFS, (key) => {
+      this._selectedTowerType = key;
+      // Toggle selection indicator on shop panel
+      const panel = document.getElementById('tower-shop');
+      if (panel) panel.classList.toggle('has-selection', key !== null);
+    });
+
     // HUD
     this._hud = new HUD(this._hudEl);
     this._hud.bind(this._state, () => this._startWave(), () => {
@@ -347,12 +462,27 @@ export class Game {
     this._menu = new NavigationMenu(this._mount);
     this._menu.show('main');
 
-    this._menu.on('start', () => { this._state.phase = 'build'; });
+    this._menu.on('start', () => {
+      this._state.phase = 'build';
+      this._shop.show();
+      this._shop.updateStardust(this._state.stardust);
+    });
     this._menu.on('restart', () => { this._fullReset(); });
     this._menu.on('mainmenu', () => { this._fullReset(); this._menu.show('main'); });
-    this._menu.on('nextwave', () => { this._startWave(); });
 
-    // On game over show the overlay
+    // Keep shop stardust in sync
+    this._state.on('stardustChanged', () => this._shop?.updateStardust(this._state.stardust));
+
+    // Hide shop during combat (can't place during wave) – re-show on wave clear
+    this._state.on('waveStarted', () => {
+      this._shop.deselect();
+      this._shop.hide();
+    });
+    this._state.on('waveCleared', () => {
+      this._shop.show();
+      this._shop.updateStardust(this._state.stardust);
+    });
+    this._menu.on('nextwave', () => { this._startWave(); });
     this._state.on('gameover', () => {
       setTimeout(() => {
         this._menu.show('gameover', { score: this._state.score });
@@ -364,11 +494,6 @@ export class Game {
       setTimeout(() => {
         this._menu.show('victory', { score });
       }, 2000);
-    });
-
-    // Wave cleared → brief overlay
-    this._state.on('waveCleared', ({ wave }) => {
-      // No full-screen overlay for wave clear; just HUD message
     });
   }
 
@@ -467,7 +592,7 @@ export class Game {
       healAccum: 0,
     };
     if (factory.stats.type === 'boss') {
-      enemyRecord.bossSpawnThreshold = hp - 250;
+      enemyRecord.bossSpawnThreshold = hp - 400;
     }
     if (factory.stats.type === 'boss') {
       this._hud.showBossBar(hp, factory.stats.type);
@@ -493,7 +618,13 @@ export class Game {
       const e = this._enemies[i];
       if (!e.alive) continue;
 
-      e.pathT += (e.speed * delta) / totalLen;
+      // Apply slow decay
+      if (e.slowTimer > 0) {
+        e.slowTimer -= delta;
+        if (e.slowTimer <= 0) { e.slowTimer = 0; e.slowFactor = 1.0; }
+      }
+      const effectiveSpeed = e.speed * (e.slowFactor != null ? e.slowFactor : 1.0);
+      e.pathT += (effectiveSpeed * delta) / totalLen;
 
       if (e.pathT >= 1) {
         // Reached nexus – explode and damage
@@ -585,45 +716,131 @@ export class Game {
         if (tower.fireTimer <= 0) {
           // Disruptors slow tower fire rate to 35 %
           tower.fireTimer = 1 / (disrupted ? tower.fireRate * 0.35 : tower.fireRate);
-          tower.triggerShoot(best.mesh.position);
-
-          // Immune enemies (e.g. the Duck) cannot be damaged
-          if (!best.stats?.immune) {
-            best.hp -= tower.damage;
-          }
-          // Boss: spawn a random minion every 250 HP lost
-          if (best.stats?.type === 'boss' && best.alive && best.bossSpawnThreshold !== undefined) {
-            while (best.hp <= best.bossSpawnThreshold && best.bossSpawnThreshold > 0) {
-              const _BOSS_MINION_TYPES = ['fast', 'tank', 'healer', 'disruptor', 'eximus'];
-              const minionType = _BOSS_MINION_TYPES[Math.floor(Math.random() * _BOSS_MINION_TYPES.length)];
-              this._deferredSpawns.push({ type: minionType, pathT: Math.max(0, best.pathT - 0.01) });
-              this._state.enemiesLeft += 1;
-              best.bossSpawnThreshold -= 250;
-            }
-          }
-          if (best.hp <= 0) {
-            best.alive = false;
-
-            // Eximus: queue child spawns BEFORE decrementing enemiesLeft
-            if (best.stats?.spawnOnDeath) {
-              const n = best.stats.spawnOnDeath;
-              const pt = best.pathT;
-              for (let s = 0; s < n; s++) {
-                this._deferredSpawns.push({ type: 'standard', pathT: Math.max(0, pt - s * 0.005) });
+          if (tower.isAoe) {
+            // AoE: damage all enemies within tower range
+            const aoePositions = [];
+            const aoeHit = [];
+            for (const e of this._enemies) {
+              if (!e.alive || e.stats?.immune) continue;
+              if (tp.distanceTo(e.mesh.position) <= tower.range) {
+                e.hp -= tower.damage;
+                aoePositions.push(e.mesh.position.clone());
+                aoeHit.push(e);
               }
-              // Keep enemiesLeft accurate so the wave doesn't end prematurely
-              this._state.enemiesLeft += n;
             }
+            tower.triggerShoot(aoePositions.length > 0 ? aoePositions : [best.mesh.position.clone()], tower.range);
 
-            const reward = best.reward;
-            if (best.stats?.type === 'boss') this._hud.hideBossBar();
-            best.triggerDeath(() => {
-              this._scene.remove(best.mesh);
-              const idx = this._animFns.indexOf(best._animRef);
-              if (idx !== -1) this._animFns.splice(idx, 1);
-              best._done = true;
-            });
-            this._state.enemyKilled(reward);
+            // Process deaths for every hit enemy (not just best)
+            for (const e of aoeHit) {
+              if (e.stats?.type === 'boss' && e.alive && e.bossSpawnThreshold !== undefined) {
+                while (e.hp <= e.bossSpawnThreshold && e.bossSpawnThreshold > 0) {
+                  const _BOSS_MINION_TYPES = ['fast', 'tank', 'healer', 'disruptor', 'eximus'];
+                  const minionType = _BOSS_MINION_TYPES[Math.floor(Math.random() * _BOSS_MINION_TYPES.length)];
+                  this._deferredSpawns.push({ type: minionType, pathT: Math.max(0, e.pathT - 0.01) });
+                  this._state.enemiesLeft += 1;
+                  e.bossSpawnThreshold -= 400;
+                }
+              }
+              if (e.hp <= 0) {
+                e.alive = false;
+                if (e.stats?.spawnOnDeath) {
+                  const n = e.stats.spawnOnDeath;
+                  const pt = e.pathT;
+                  for (let s = 0; s < n; s++) {
+                    this._deferredSpawns.push({ type: 'standard', pathT: Math.max(0, pt - s * 0.005) });
+                  }
+                  this._state.enemiesLeft += n;
+                }
+                if (e.stats?.type === 'boss') this._hud.hideBossBar();
+                e.triggerDeath(() => {
+                  this._scene.remove(e.mesh);
+                  const idx = this._animFns.indexOf(e._animRef);
+                  if (idx !== -1) this._animFns.splice(idx, 1);
+                  e._done = true;
+                });
+                this._state.enemyKilled(e.reward);
+              }
+            }
+          } else if (tower.isAreaSlow) {
+            // Cryo: slow + minor damage to all enemies in range
+            const cryoHit = [];
+            for (const e of this._enemies) {
+              if (!e.alive) continue;
+              if (tp.distanceTo(e.mesh.position) < tower.range) {
+                if (!e.stats?.immune) { e.hp -= tower.damage; cryoHit.push(e); }
+                e.slowTimer  = tower.slowDuration;
+                e.slowFactor = tower.slowFactor;
+              }
+            }
+            tower.triggerShoot(best.mesh.position, tower.range);
+
+            for (const e of cryoHit) {
+              if (e.stats?.type === 'boss' && e.alive && e.bossSpawnThreshold !== undefined) {
+                while (e.hp <= e.bossSpawnThreshold && e.bossSpawnThreshold > 0) {
+                  const _BOSS_MINION_TYPES = ['fast', 'tank', 'healer', 'disruptor', 'eximus'];
+                  const minionType = _BOSS_MINION_TYPES[Math.floor(Math.random() * _BOSS_MINION_TYPES.length)];
+                  this._deferredSpawns.push({ type: minionType, pathT: Math.max(0, e.pathT - 0.01) });
+                  this._state.enemiesLeft += 1;
+                  e.bossSpawnThreshold -= 400;
+                }
+              }
+              if (e.hp <= 0) {
+                e.alive = false;
+                if (e.stats?.spawnOnDeath) {
+                  const n = e.stats.spawnOnDeath;
+                  const pt = e.pathT;
+                  for (let s = 0; s < n; s++) {
+                    this._deferredSpawns.push({ type: 'standard', pathT: Math.max(0, pt - s * 0.005) });
+                  }
+                  this._state.enemiesLeft += n;
+                }
+                if (e.stats?.type === 'boss') this._hud.hideBossBar();
+                e.triggerDeath(() => {
+                  this._scene.remove(e.mesh);
+                  const idx = this._animFns.indexOf(e._animRef);
+                  if (idx !== -1) this._animFns.splice(idx, 1);
+                  e._done = true;
+                });
+                this._state.enemyKilled(e.reward);
+              }
+            }
+          } else {
+            // Single-target: Immune enemies (e.g. the Duck) cannot be damaged
+            if (!best.stats?.immune) {
+              best.hp -= tower.damage;
+            }
+            tower.triggerShoot(best.mesh.position);
+
+            // Boss minion spawns
+            if (best.stats?.type === 'boss' && best.alive && best.bossSpawnThreshold !== undefined) {
+              while (best.hp <= best.bossSpawnThreshold && best.bossSpawnThreshold > 0) {
+                const _BOSS_MINION_TYPES = ['fast', 'tank', 'healer', 'disruptor', 'eximus'];
+                const minionType = _BOSS_MINION_TYPES[Math.floor(Math.random() * _BOSS_MINION_TYPES.length)];
+                this._deferredSpawns.push({ type: minionType, pathT: Math.max(0, best.pathT - 0.01) });
+                this._state.enemiesLeft += 1;
+                best.bossSpawnThreshold -= 400;
+              }
+            }
+            if (best.hp <= 0) {
+              best.alive = false;
+              if (best.stats?.spawnOnDeath) {
+                const n = best.stats.spawnOnDeath;
+                const pt = best.pathT;
+                for (let s = 0; s < n; s++) {
+                  this._deferredSpawns.push({ type: 'standard', pathT: Math.max(0, pt - s * 0.005) });
+                }
+                this._state.enemiesLeft += n;
+              }
+              const reward = best.reward;
+              if (best.stats?.type === 'boss') this._hud.hideBossBar();
+              best.triggerDeath(() => {
+                this._scene.remove(best.mesh);
+                const idx = this._animFns.indexOf(best._animRef);
+                if (idx !== -1) this._animFns.splice(idx, 1);
+                best._done = true;
+              });
+              this._state.enemyKilled(reward);
+            }
           }
         }
       }
@@ -632,8 +849,24 @@ export class Game {
 
   // ── Sell tower ────────────────────────────────────────────────────────────
 
+  _upgradeTower(tower) {
+    if (tower.level >= 3) return;
+    const upg = tower.upgrades[tower.level];
+    if (!upg) return;
+    if (!this._state.spendStardust(upg.cost)) {
+      this._hud.showMsg(`Need ◈ ${upg.cost} to upgrade!`, 2000);
+      return;
+    }
+    tower.level += 1;
+    tower.damage    *= upg.damageMultiplier;
+    tower.range     *= upg.rangeMultiplier;
+    tower.fireRate  *= upg.fireRateMultiplier;
+    tower.totalSpent += upg.cost;
+    this._shop?.updateStardust(this._state.stardust);
+  }
+
   _sellTower(tower) {
-    const refund = Math.floor(tower.cost * 0.5);
+    const refund = Math.floor(tower.totalSpent * 0.5);
     this._state.addStardust(refund);
     this._scene.remove(tower.mesh);
     const animIdx = this._animFns.indexOf(tower._animRef);

@@ -2,17 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Laser Turret – Astra TD Preview</title>
+  <title>Tower Models – Astra TD Preview</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { width: 100%; height: 100%; background: #020408; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: #d8f1ff; }
     canvas { display: block; }
+
     #label {
       position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-      color: #46d4ff; font-size: 11px; letter-spacing: 0.25em; font-weight: 700;
-      background: rgba(6,10,22,0.7); padding: 6px 16px; border-radius: 6px;
-      border: 1px solid rgba(70,212,255,0.25);
+      font-size: 11px; letter-spacing: 0.25em; font-weight: 700;
+      background: rgba(6,10,22,0.82); padding: 6px 18px; border-radius: 6px;
+      border: 1px solid rgba(70,212,255,0.25); white-space: nowrap;
+      pointer-events: none;
     }
+
+    /* tower selector tabs */
+    #tabs {
+      position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px;
+      background: rgba(6,10,22,0.82); border: 1px solid rgba(70,212,255,0.22);
+      border-radius: 10px; padding: 8px 14px; backdrop-filter: blur(6px);
+    }
+    .tab-btn {
+      background: rgba(255,255,255,0.05); color: #7ab8d8;
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 7px;
+      padding: 6px 16px; font-size: 11px; letter-spacing: 0.12em;
+      cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.12); color: #d8f1ff; }
+    .tab-btn.active { color: var(--accent, #46d4ff); border-color: var(--accent, #46d4ff); background: rgba(70,212,255,0.10); }
+
+    /* controls bar */
     #ctrl {
       position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
       display: flex; gap: 10px;
@@ -25,10 +45,41 @@
       transition: background .2s;
     }
     button:hover { background: rgba(70,212,255,0.25); }
+    button.active-toggle { background: rgba(70,212,255,0.30); color: #46d4ff; }
+
+    /* stat card */
+    #statcard {
+      position: absolute; top: 14px; right: 16px;
+      background: rgba(6,10,22,0.82); border: 1px solid rgba(70,212,255,0.22);
+      border-radius: 10px; padding: 12px 18px; backdrop-filter: blur(6px);
+      font-size: 11px; line-height: 1.9; min-width: 160px;
+    }
+    .sc-title { font-size: 10px; letter-spacing: 0.2em; font-weight: 700; margin-bottom: 6px; }
+    .sc-row { display: flex; justify-content: space-between; gap: 20px; }
+    .sc-key { color: #7ab8d8; font-size: 10px; letter-spacing: 0.08em; }
+    .sc-val { font-weight: 600; }
+    .sc-tag { margin-top: 6px; font-size: 9px; letter-spacing: 0.14em; opacity: 0.6; text-transform: uppercase; }
   </style>
 </head>
 <body>
-  <div id="label">LASER TURRET MODEL PREVIEW</div>
+  <div id="label">TOWER MODEL PREVIEW</div>
+
+  <div id="tabs">
+    <button class="tab-btn active" data-key="laser" style="--accent:#46d4ff">⚡ LASER TURRET</button>
+    <button class="tab-btn" data-key="nova"  style="--accent:#ff8800">💥 NOVA CANNON</button>
+    <button class="tab-btn" data-key="sniper"style="--accent:#cc44ff">🎯 VOID SNIPER</button>
+    <button class="tab-btn" data-key="cryo"  style="--accent:#88eeff">❄️ CRYO EMITTER</button>
+  </div>
+
+  <div id="statcard">
+    <div class="sc-title" id="sc-name" style="color:#46d4ff">LASER TURRET</div>
+    <div class="sc-row"><span class="sc-key">COST</span> <span class="sc-val" id="sc-cost">—</span></div>
+    <div class="sc-row"><span class="sc-key">RANGE</span> <span class="sc-val" id="sc-range">—</span></div>
+    <div class="sc-row"><span class="sc-key">DAMAGE</span> <span class="sc-val" id="sc-dmg">—</span></div>
+    <div class="sc-row"><span class="sc-key">RATE</span> <span class="sc-val" id="sc-rate">—</span></div>
+    <div class="sc-tag" id="sc-tag">Single Target</div>
+  </div>
+
   <div id="ctrl">
     <button id="btn-shoot">FIRE</button>
     <button id="btn-spawn">RE-SPAWN</button>
@@ -39,9 +90,21 @@
   <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.162.0/build/three.module.js"}}</script>
   <script type="module">
     import * as THREE from 'three';
-    import { createLaserTurret } from './LaserTurret.js';
-    import { createStarField }   from '../misc/StarField.js';
+    import { createLaserTurret, LaserTurretStats } from './LaserTurret.js';
+    import { createNovaCannon,  NovaCannonStats  } from './NovaCannon.js';
+    import { createVoidSniper,  VoidSniperStats  } from './VoidSniper.js';
+    import { createCryoEmitter, CryoEmitterStats } from './CryoEmitter.js';
+    import { createStarField } from '../misc/StarField.js';
 
+    // ── Tower registry ──────────────────────────────────────────────────
+    const TOWERS = {
+      laser: { create: createLaserTurret, stats: LaserTurretStats, tag: 'Single Target', color: '#46d4ff' },
+      nova: { create: createNovaCannon,  stats: NovaCannonStats,  tag: 'Area Damage',   color: '#ff8800' },
+      sniper: { create: createVoidSniper,  stats: VoidSniperStats,  tag: 'Long Range',    color: '#cc44ff' },
+      cryo: { create: createCryoEmitter, stats: CryoEmitterStats, tag: 'Area Slow',     color: '#88eeff' },
+    };
+
+    // ── Renderer / scene ────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(devicePixelRatio);
     renderer.shadowMap.enabled = true;
@@ -50,6 +113,7 @@
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0d1a2e);
+    scene.fog = new THREE.FogExp2(0x0a1a2e, 0.012);
 
     const cam = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.1, 300);
     cam.position.set(0, 3, 6);
@@ -60,31 +124,95 @@
     const key = new THREE.DirectionalLight(0xfff2d0, 2.8);
     key.position.set(8, 12, 6); key.castShadow = true;
     scene.add(key);
+    const fill = new THREE.DirectionalLight(0x6080d0, 0.9);
+    fill.position.set(-8, 6, -4);
+    scene.add(fill);
 
-    // Floor
+    // Floor disc
     const floor = new THREE.Mesh(
-      new THREE.CylinderGeometry(3, 3, 0.1, 16),
+      new THREE.CylinderGeometry(3.2, 3.2, 0.1, 32),
       new THREE.MeshStandardMaterial({ color: 0x0e1a30, roughness: 0.7, metalness: 0.6 })
     );
     floor.receiveShadow = true;
     scene.add(floor);
 
+    // Grid lines on floor
+    const gridHelper = new THREE.GridHelper(6, 6, 0x1a3a5a, 0x0e2035);
+    gridHelper.position.y = 0.06;
+    scene.add(gridHelper);
+
     const stars = createStarField();
     scene.add(stars.mesh);
 
-    let turret = createLaserTurret();
-    scene.add(turret.mesh);
-    turret.mesh.position.y = 0.05;
-
-    // Dummy target sphere
+    // Dummy target
     const dummy = new THREE.Mesh(
       new THREE.SphereGeometry(0.2, 12, 8),
       new THREE.MeshStandardMaterial({ color: 0xff2060, emissive: new THREE.Color(0xff2060), emissiveIntensity: 1.2 })
     );
-    dummy.position.set(3, 1.5, 0);
     scene.add(dummy);
     let dummyAngle = 0;
+
+    // ── Active tower ────────────────────────────────────────────────────
+    let activeTower = null;
+    let activeKey = 'laser';
     let trackEnabled = false;
+    let orbitActive = true;
+    let orbitAngle = 0;
+
+    function loadTower(key) {
+      if (activeTower) scene.remove(activeTower.mesh);
+      const def = TOWERS[key];
+      activeTower = def.create();
+      activeTower.mesh.position.y = 0.05;
+      scene.add(activeTower.mesh);
+      activeKey = key;
+
+      // Update stat card
+      const s = def.stats;
+      document.getElementById('sc-name').textContent  = activeTower.name;
+      document.getElementById('sc-name').style.color  = def.color;
+      document.getElementById('sc-cost').textContent  = `◈ ${s.cost}`;
+      document.getElementById('sc-range').textContent = s.range;
+      document.getElementById('sc-dmg').textContent   = s.damage;
+      document.getElementById('sc-rate').textContent  = `${s.fireRate}/s`;
+      document.getElementById('sc-tag').textContent   = def.tag;
+      document.getElementById('label').textContent    = `${activeTower.name} — MODEL PREVIEW`;
+
+      // Update tab highlights
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.key === key);
+      });
+
+      // Reset camera distance based on model size
+      const camDist = key === 'sniper' ? 7.5 : 5.5;
+      orbitAngle = orbitActive ? orbitAngle : 0;
+      if (!orbitActive) cam.position.set(0, 3, camDist);
+    }
+
+    // Tab clicks
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => loadTower(btn.dataset.key));
+    });
+
+    // Keyboard shortcut: 1-4 to switch towers
+    window.addEventListener('keydown', e => {
+      const map = { '1': 'laser', '2': 'nova', '3': 'sniper', '4': 'cryo' };
+      if (map[e.key]) loadTower(map[e.key]);
+    });
+
+    // Control buttons
+    document.getElementById('btn-shoot').addEventListener('click', () => {
+      activeTower?.triggerShoot(dummy.position.clone());
+    });
+    document.getElementById('btn-spawn').addEventListener('click', () => loadTower(activeKey));
+    document.getElementById('btn-track').addEventListener('click', e => {
+      trackEnabled = !trackEnabled;
+      e.currentTarget.classList.toggle('active-toggle', trackEnabled);
+    });
+    document.getElementById('btn-orbit').addEventListener('click', e => {
+      orbitActive = !orbitActive;
+      e.currentTarget.classList.toggle('active-toggle', !orbitActive);
+    });
 
     window.addEventListener('resize', () => {
       renderer.setSize(innerWidth, innerHeight);
@@ -92,36 +220,30 @@
       cam.updateProjectionMatrix();
     });
 
-    let orbitActive = true;
-    let orbitAngle = 0;
-    document.getElementById('btn-shoot').addEventListener('click', () => turret.triggerShoot(dummy.position.clone()));
-    document.getElementById('btn-spawn').addEventListener('click', () => {
-      scene.remove(turret.mesh);
-      turret = createLaserTurret();
-      turret.mesh.position.y = 0.05;
-      scene.add(turret.mesh);
-    });
-    document.getElementById('btn-track').addEventListener('click', () => { trackEnabled = !trackEnabled; });
-    document.getElementById('btn-orbit').addEventListener('click', () => { orbitActive = !orbitActive; });
+    // ── Initial load ────────────────────────────────────────────────────
+    loadTower('laser');
 
+    // ── Render loop ─────────────────────────────────────────────────────
     const clock = new THREE.Clock();
     (function loop() {
       requestAnimationFrame(loop);
       const dt = clock.getDelta();
-      stars.update(dt);
-      turret.update(dt);
 
-      // Dummy orbit
+      stars.update(dt);
+      activeTower?.update(dt);
+
       dummyAngle += dt * 0.9;
       dummy.position.set(Math.sin(dummyAngle) * 3.5, 1.5, Math.cos(dummyAngle) * 3.5);
 
-      if (trackEnabled) turret.trackTarget(dummy.position);
+      if (trackEnabled) activeTower?.trackTarget(dummy.position);
 
       if (orbitActive) {
         orbitAngle += dt * 0.22;
-        cam.position.set(Math.sin(orbitAngle) * 6, 3, Math.cos(orbitAngle) * 6);
+        const r = activeKey === 'sniper' ? 7.5 : 5.5;
+        cam.position.set(Math.sin(orbitAngle) * r, 3, Math.cos(orbitAngle) * r);
         cam.lookAt(0, 1, 0);
       }
+
       renderer.render(scene, cam);
     })();
   </script>

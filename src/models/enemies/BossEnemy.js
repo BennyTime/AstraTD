@@ -30,7 +30,7 @@ import * as THREE from 'three';
  */
 
 export const BossEnemyStats = {
-  hp: 2500,
+  hp: 5000,
   speed: 0.55,
   damage: 100,
   reward: 500,

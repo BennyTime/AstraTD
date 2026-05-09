@@ -103,9 +103,6 @@
 
 make better UI for main menu, game (nexus HP, Money (change to stardust), Enemy/Wave count, Tower Shop).
 
-New towers.
-Organize the code better. board components should be their own class. Road should be separate as well to be called. 
-
 Create extra maps. 2 more.
 Board feels empty when it comes to grass.
 Textures! lets add textures to the objects. to make it look beter

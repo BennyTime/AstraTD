@@ -60,7 +60,7 @@ export class Road {
       const len = dir.length();
       const midX = (a.x + b.x) / 2;
       const midZ = (a.z + b.z) / 2;
-      const isH  = Math.abs(dir.z) < 0.001;
+      const isH = Math.abs(dir.z) < 0.001;
       const segW = isH ? len : pathW;
       const segD = isH ? pathW : len;
 

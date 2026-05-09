@@ -16,7 +16,7 @@ export const GameConfig = {
   waveCooldown: 5000,
 
   // Economy
-  startingStardust: 200,
+  startingStardust: 20000,
   killReward: 25,
 
   // Nexus

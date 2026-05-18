@@ -1,13 +1,8 @@
 import * as THREE from 'three';
 
-/**
- * StarField – a static particle system of ~1500 stars placed on a large sphere.
- * Includes a subtle slow rotation for parallax feel.
- */
 export function createStarField() {
   const group = new THREE.Group();
 
-  // --- Background stars (far) ---
   const farCount = 1200;
   const farGeo = new THREE.BufferGeometry();
   const farPos = new Float32Array(farCount * 3);
@@ -23,7 +18,6 @@ export function createStarField() {
   const farMat = new THREE.PointsMaterial({ color: 0xd8f1ff, size: 0.55, sizeAttenuation: true, fog: false, depthWrite: false });
   group.add(new THREE.Points(farGeo, farMat));
 
-  // --- Mid stars (medium) ---
   const midCount = 400;
   const midGeo = new THREE.BufferGeometry();
   const midPos = new Float32Array(midCount * 3);
@@ -39,7 +33,6 @@ export function createStarField() {
   const midMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.9, sizeAttenuation: true, fog: false, depthWrite: false });
   group.add(new THREE.Points(midGeo, midMat));
 
-  // --- Bright accent stars ---
   const accentCount = 80;
   const accentGeo = new THREE.BufferGeometry();
   const accentPos = new Float32Array(accentCount * 3);

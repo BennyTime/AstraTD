@@ -15,7 +15,6 @@ import * as THREE from 'three';
  *   └─ legPivot[FL/FR/BL/BR]
  *       └─ upper/lower leg + foot
  *
- * Animations: heavy 4-legged stomp, slow topple death.
  */
 
 export const TankEnemyStats = {
@@ -63,13 +62,11 @@ export function createTankEnemy() {
   torsoMesh.castShadow = true;
   torso.add(torsoMesh);
 
-  // Sloped top armour
   const armorTop = new THREE.Mesh(_geo.armorTop, plateMat);
   armorTop.position.set(0, 0.34, 0);
   armorTop.rotation.x = -0.12;
   torso.add(armorTop);
 
-  // Front armour plate
   const armorFront = new THREE.Mesh(_geo.armorFront, plateMat);
   armorFront.position.set(0, 0.0, 0.50);
   torso.add(armorFront);
@@ -111,7 +108,6 @@ export function createTankEnemy() {
     upper.castShadow = true;
     pivot.add(upper);
 
-    // Knee
     const knee = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), jointMat);
     knee.position.y = -0.40;
     pivot.add(knee);
@@ -120,7 +116,6 @@ export function createTankEnemy() {
     kneePad.position.set(0, -0.38, 0.09);
     pivot.add(kneePad);
 
-    // Lower leg pivot (at knee)
     const kneePivot = new THREE.Group();
     kneePivot.position.y = -0.40;
     pivot.add(kneePivot);
@@ -194,9 +189,8 @@ export function createTankEnemy() {
     t += delta;
 
     if (state === 'walk') {
-      walkPhase += delta * 1.8; // slow stomp cycle
+      walkPhase += delta * 1.8;
 
-      // Diagonal pairs: FL+BR move together, FR+BL move together
       const swingA =  Math.sin(walkPhase) * 0.35;
       const swingB = -Math.sin(walkPhase) * 0.35;
 
@@ -205,22 +199,18 @@ export function createTankEnemy() {
       legPivots.FR.pivot.rotation.x =  swingB;
       legPivots.BL.pivot.rotation.x =  swingB;
 
-      // Knee bend for raised leg
       legPivots.FL.kneePivot.rotation.x = Math.max(0, -Math.sin(walkPhase)) * 0.45;
       legPivots.BR.kneePivot.rotation.x = Math.max(0, -Math.sin(walkPhase)) * 0.45;
       legPivots.FR.kneePivot.rotation.x = Math.max(0, Math.sin(walkPhase)) * 0.45;
       legPivots.BL.kneePivot.rotation.x = Math.max(0, Math.sin(walkPhase)) * 0.45;
 
-      // Torso heave (heavy footfall)
       torso.position.y = 1.05 * SCALE + Math.abs(Math.sin(walkPhase * 2)) * -0.02;
 
-      // Visor glow flicker
       visorMat.emissiveIntensity = 1.8 + Math.sin(t * 4) * 0.3;
 
     } else if (state === 'death') {
       deathTimer += delta;
 
-      // Topple forward slowly
       torso.rotation.x = Math.min(Math.PI / 2, deathTimer * 1.5);
       torso.position.y = Math.max(0, 1.05 * SCALE - deathTimer * 0.8);
 
@@ -241,7 +231,6 @@ export function createTankEnemy() {
       explodeTime += delta;
 
       if (explodeTime < JOY_DURATION) {
-        // Heavy stomp in place
         const stomp = Math.abs(Math.sin(explodeTime * Math.PI * 2));
         group.position.y = (group.userData._joyBaseY || 0) + stomp * 0.12;
         visorMat.emissiveIntensity = 2.5 + Math.sin(t * 15) * 0.8;

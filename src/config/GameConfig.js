@@ -1,24 +1,15 @@
-// Central configuration for Astra TD
-// Note: per-unit stats (HP, speed, damage, cost, etc.) live in the
-// respective model files (StandardEnemyStats, LaserTurretStats, …).
-
 import { Map1 } from './maps/Map1.js';
+import { Map2 } from './maps/Map2.js';
+import { Map3 } from './maps/Map3.js';
+
+export const MAPS = [Map1, Map2, Map3];
 
 export const GameConfig = {
-  // Active map — swap this to change the current map
-  activeMap: Map1,
-
-  // Board Y offset (shared game-world anchor, not map-specific)
+  activeMap: Map3,
   boardY: 0,
-
-  // Waves  (composition is defined in WaveConfig.js)
   totalWaves: 10,
   waveCooldown: 5000,
-
-  // Economy
-  startingStardust: 20000,
+  startingStardust: 200,
   killReward: 25,
-
-  // Nexus
   nexusMaxHP: 200,
 };

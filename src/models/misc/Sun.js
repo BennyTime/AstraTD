@@ -1,28 +1,10 @@
 import * as THREE from 'three';
 
-/**
- * Sun – the distant star that acts as the scene's main light source.
- *
- * Structure:
- *   sunGroup
- *   ├─ core          (bright emissive sphere)
- *   ├─ innerCorona   (slightly larger, transparent BackSide sphere)
- *   └─ outerHaze     (large transparent glow shell)
- *
- * All materials have fog disabled — the sun lives above any atmospheric haze.
- *
- * Returns:
- *   mesh   – visual group; position it far away, e.g. (130, 85, 55)
- *   light  – DirectionalLight; add it to the scene and set its position
- *            to match mesh.position (also add light.target to scene).
- *   update – animation tick (delta in seconds)
- */
 export function createSun() {
   const group = new THREE.Group();
 
   function fogless(mat) { mat.fog = false; return mat; }
 
-  // ── Core sphere ───────────────────────────────────────────────────────────
   const coreMat = fogless(new THREE.MeshStandardMaterial({
     color: 0xffffff,
     emissive: new THREE.Color(0xffe866),
@@ -32,7 +14,6 @@ export function createSun() {
   }));
   group.add(new THREE.Mesh(new THREE.SphereGeometry(5, 32, 32), coreMat));
 
-  // ── Inner corona (rendered back-face to wrap around core) ────────────────
   const innerMat = fogless(new THREE.MeshStandardMaterial({
     color: 0xffaa00,
     emissive: new THREE.Color(0xff8800),
@@ -44,7 +25,6 @@ export function createSun() {
   }));
   group.add(new THREE.Mesh(new THREE.SphereGeometry(8, 32, 32), innerMat));
 
-  // ── Outer haze ────────────────────────────────────────────────────────────
   const outerMat = fogless(new THREE.MeshStandardMaterial({
     color: 0xff6600,
     emissive: new THREE.Color(0xff4400),
@@ -56,7 +36,6 @@ export function createSun() {
   }));
   group.add(new THREE.Mesh(new THREE.SphereGeometry(14, 24, 24), outerMat));
 
-  // ── DirectionalLight (replaces the scene's hard-coded key light) ──────────
   const light = new THREE.DirectionalLight(0xfff2d0, 2.8);
   light.castShadow = true;
   light.shadow.mapSize.width = 2048;
@@ -65,9 +44,9 @@ export function createSun() {
   light.shadow.camera.far = 230;
   light.shadow.camera.left = light.shadow.camera.bottom = -30;
   light.shadow.camera.right = light.shadow.camera.top = 30;
-  light.shadow.bias = -0.001;
-
-  // ── Animation ─────────────────────────────────────────────────────────────
+  light.shadow.bias = -0.0005;
+  light.shadow.normalBias = 0.01;
+  
   let t = 0;
   function update(delta) {
     t += delta;

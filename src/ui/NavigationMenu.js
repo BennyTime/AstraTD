@@ -4,8 +4,10 @@
  */
 export class NavigationMenu {
   /** @param {HTMLElement} mountEl  the #app div */
-  constructor(mountEl) {
+  constructor(mountEl, maps = []) {
     this._mount = mountEl;
+    this._maps = maps;
+    this._selectedMap = null;
     this._callbacks = {};
     this._buildDOM();
   }
@@ -45,9 +47,10 @@ export class NavigationMenu {
       <!-- ── GAME OVER ── -->
       <div class="nav-screen nav-hidden" id="nav-gameover">
         <div class="nav-logo">
+          <div class="nav-logo-glow gameover-glow"></div>
           <h1 class="nav-title gameover-title">NEXUS</h1>
           <h1 class="nav-title gameover-title">DESTROYED</h1>
-          <p class="nav-sub">The enemy has breached your defenses.</p>
+          <p class="nav-sub nav-sub-sentence">The enemy has breached your defenses.</p>
         </div>
         <div class="gameover-score">
           <span class="score-label">SCORE</span>
@@ -83,14 +86,23 @@ export class NavigationMenu {
           <button class="nav-btn" id="btn-victory-menu">MAIN MENU</button>
         </div>
       </div>
+
+      <!-- ── MAP SELECT ── -->
+      <div class="nav-screen nav-hidden" id="nav-mapselect">
+        <h2 class="nav-section-title">SELECT MAP</h2>
+        <div class="map-cards" id="map-cards-container"></div>
+        <div class="nav-buttons" style="margin-top:28px">
+          <button class="nav-btn nav-btn-primary" id="btn-launch" disabled>LAUNCH</button>
+          <button class="nav-btn" id="btn-mapselect-back">BACK</button>
+        </div>
+      </div>
     `;
     this._mount.appendChild(overlay);
     this._overlay = overlay;
 
     // Wire events
     document.getElementById('btn-start').addEventListener('click', () => {
-      this.hide();
-      this._emit('start');
+      this._show('nav-mapselect');
     });
     document.getElementById('btn-how').addEventListener('click', () => {
       this._show('nav-how');
@@ -98,6 +110,15 @@ export class NavigationMenu {
     document.getElementById('btn-how-back').addEventListener('click', () => {
       this._show('nav-main');
     });
+    document.getElementById('btn-mapselect-back').addEventListener('click', () => {
+      this._show('nav-main');
+    });
+    document.getElementById('btn-launch').addEventListener('click', () => {
+      if (!this._selectedMap) return;
+      this.hide();
+      this._emit('start', this._selectedMap);
+    });
+    this._buildMapCards();
     document.getElementById('btn-restart').addEventListener('click', () => {
       this.hide();
       this._emit('restart');
@@ -132,6 +153,7 @@ export class NavigationMenu {
   show(screen = 'main', extra = {}) {
     this._overlay.classList.remove('nav-hidden');
     if (screen === 'main')      { this._show('nav-main'); }
+    else if (screen === 'mapselect') { this._show('nav-mapselect'); }
     else if (screen === 'gameover') {
       document.getElementById('go-score').textContent = extra.score ?? 0;
       this._show('nav-gameover');
@@ -147,6 +169,26 @@ export class NavigationMenu {
   }
 
   hide() { this._overlay.classList.add('nav-hidden'); }
+
+  _buildMapCards() {
+    const container = document.getElementById('map-cards-container');
+    this._maps.forEach((map) => {
+      const diff = (map.difficulty ?? 'Normal').toLowerCase();
+      const card = document.createElement('div');
+      card.className = 'map-card';
+      card.innerHTML = `
+        <div class="map-card-name">${map.name}</div>
+        <div class="map-card-diff diff-${diff}">${(map.difficulty ?? 'NORMAL').toUpperCase()}</div>
+      `;
+      card.addEventListener('click', () => {
+        container.querySelectorAll('.map-card').forEach(c => c.classList.remove('map-card-selected'));
+        card.classList.add('map-card-selected');
+        this._selectedMap = map;
+        document.getElementById('btn-launch').disabled = false;
+      });
+      container.appendChild(card);
+    });
+  }
 }
 
 // ── Inject CSS ──────────────────────────────────────────────────────────────
@@ -155,7 +197,7 @@ css.textContent = `
   #nav-overlay {
     position: absolute;
     inset: 0;
-    z-index: 100;
+    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -187,7 +229,9 @@ css.textContent = `
     text-shadow: 0 0 30px #46d4ff, 0 0 60px rgba(70,212,255,0.4);
     margin: 0;
   }
-  .gameover-title { color: #ff2060; text-shadow: 0 0 30px #ff2060, 0 0 60px rgba(255,32,96,0.4); }
+  .gameover-title { color: #ff2060; text-shadow: 0 0 30px #ff2060, 0 0 60px rgba(255,32,96,0.4); font-size: clamp(32px, 7vw, 62px); letter-spacing: 0.12em; }
+  .gameover-glow { background: radial-gradient(ellipse, rgba(255,32,96,0.25) 0%, transparent 70%) !important; }
+  .nav-sub-sentence { letter-spacing: 0.04em; }
   .victory-title  { color: #46d4ff; text-shadow: 0 0 30px #46d4ff, 0 0 60px rgba(70,212,255,0.4); }
   .nav-sub {
     font-size: 13px;
@@ -257,5 +301,33 @@ css.textContent = `
     text-shadow: 0 0 20px #46d4ff;
     letter-spacing: 0.05em;
   }
+
+  .map-cards { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 380px; margin: 0 auto 4px; }
+  .map-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(70,212,255,0.25);
+    background: rgba(70,212,255,0.05);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, transform .1s;
+  }
+  .map-card:hover { background: rgba(70,212,255,0.12); border-color: rgba(70,212,255,0.5); transform: translateX(2px); }
+  .map-card.map-card-selected {
+    background: rgba(70,212,255,0.15);
+    border-color: #46d4ff;
+    box-shadow: 0 0 16px rgba(70,212,255,0.25);
+  }
+  .map-card-name { font-size: 14px; font-weight: 700; letter-spacing: 0.1em; color: #d8f1ff; }
+  .map-card-diff {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.15em;
+    padding: 3px 10px; border-radius: 4px; border: 1px solid;
+  }
+  .diff-easy   { color: #4dde80; border-color: rgba(77,222,128,0.5);  background: rgba(77,222,128,0.1); }
+  .diff-medium { color: #ffcc00; border-color: rgba(255,204,0,0.5);   background: rgba(255,204,0,0.1); }
+  .diff-hard   { color: #ff2060; border-color: rgba(255,32,96,0.5);   background: rgba(255,32,96,0.1); }
+  #btn-launch:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
 `;
 document.head.appendChild(css);

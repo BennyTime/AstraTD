@@ -1,22 +1,5 @@
 import * as THREE from 'three';
 
-/**
- * CryoEmitter – area-slow tower.
- *
- * Hierarchy:
- *   group
- *   ├─ base         (wide flat hexagonal disc, ice-blue glow)
- *   ├─ dome         (central hemisphere housing)
- *   ├─ crystalSpines×6 (tapered crystal points around dome)
- *   ├─ orbitRings×3  (thin rings orbiting at different angles)
- *   └─ slowWave      (expanding torus ring shown on pulse)
- *
- * Fire mechanic: Non-directional – fires in all directions equally.
- *   Slows ALL enemies within range for `slowDuration` seconds,
- *   reducing their movement speed by `slowFactor`.
- *   Does not rotate to face a target.
- */
-
 export const CryoEmitterStats = {
   cost: 125,
   range: 4.0,
@@ -43,7 +26,6 @@ const _cGeo = {
 export function createCryoEmitter() {
   const group = new THREE.Group();
 
-  // ── Materials ──────────────────────────────────────────────────────────
   const baseMat = new THREE.MeshStandardMaterial({ color: 0x041420, roughness: 0.5,  metalness: 0.88 });
   const domeMat = new THREE.MeshStandardMaterial({ color: 0x082838, roughness: 0.35, metalness: 0.82 });
   const ringMat = new THREE.MeshStandardMaterial({ color: 0x88eeff, emissive: new THREE.Color(0x88eeff), emissiveIntensity: 1.6, roughness: 0.2 });
@@ -52,7 +34,6 @@ export function createCryoEmitter() {
   const domeTopMat= new THREE.MeshStandardMaterial({ color: 0xccf8ff, emissive: new THREE.Color(0x88eeff), emissiveIntensity: 2.2, transparent: true, opacity: 0.78 });
   const waveMat = new THREE.MeshStandardMaterial({ color: 0x66ddff, emissive: new THREE.Color(0x44ccff), emissiveIntensity: 3.0, transparent: true, opacity: 0 });
 
-  // ── Base (wide flat disc) ──
   const base1 = new THREE.Mesh(_cGeo.base, baseMat);
   base1.position.y = 0.10;
   base1.castShadow = base1.receiveShadow = true;
@@ -73,7 +54,6 @@ export function createCryoEmitter() {
   hexBorder.position.y = 0.10;
   group.add(hexBorder);
 
-  // ── Dome body ──
   const domeBase = new THREE.Mesh(_cGeo.domeBase, domeMat);
   domeBase.position.y = 0.50;
   domeBase.castShadow = true;
@@ -83,7 +63,6 @@ export function createCryoEmitter() {
   domeCap.position.y = 0.64;
   group.add(domeCap);
 
-  // ── Crystal spines (6 evenly spaced, pointing radially outward) ──
   const spines = [];
   for (let i = 0; i < 6; i++) {
     const angle = (i / 6) * Math.PI * 2;
@@ -99,7 +78,6 @@ export function createCryoEmitter() {
     spines.push(spine);
   }
 
-  // ── Orbit rings (3 tilted rings orbiting on Y-axis spinners) ──
   const orbitSpinners = [];
   const tiltAngles = [Math.PI / 5, Math.PI / 3.2, Math.PI / 2.1];
   const spinSpeeds  = [0.90, -0.65, 0.52];
@@ -115,14 +93,12 @@ export function createCryoEmitter() {
     orbitSpinners.push({ spinner, speed: spinSpeeds[i] });
   });
 
-  // ── Slow wave (expands outward on pulse) ──
   const slowWave = new THREE.Mesh(_cGeo.slowWave, waveMat);
   slowWave.rotation.x = Math.PI / 2;
   slowWave.position.y = 0.55;
   slowWave.visible = false;
   group.add(slowWave);
 
-  // ── State ──
   let spawnTimer = 0;
   let spawnDone = false;
   let shootTimer = 0.50;
@@ -162,25 +138,21 @@ export function createCryoEmitter() {
       return;
     }
 
-    // Idle: orbit spinners rotate around Y, base ring pulses, dome glows
     baseRing.rotation.z += delta * 0.9;
     orbitSpinners.forEach(({ spinner, speed }) => {
       spinner.rotation.y += delta * speed;
     });
     domeTopMat.emissiveIntensity = 2.0 + Math.sin(t * 2.0) * 0.5;
 
-    // Crystal shimmer
     spines.forEach((s, i) => {
       s.material.emissiveIntensity = 1.2 + 0.5 * Math.sin(t * 2.5 + i * 1.0);
     });
 
-    // Shoot animation (slow wave expands)
     if (shootTimer < 0.50) {
       shootTimer += delta;
       const s = shootTimer / 0.50;
 
       if (slowWave.visible) {
-        // torus base radius is 0.5 → scale = range/0.5 = range*2 to reach correct world radius
         slowWave.scale.setScalar(0.05 + s * (shotRange * 2 - 0.05));
         waveMat.opacity = (1 - s) * 0.9;
         if (s >= 1) slowWave.visible = false;

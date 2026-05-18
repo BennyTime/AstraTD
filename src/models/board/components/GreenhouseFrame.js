@@ -1,12 +1,5 @@
 import * as THREE from 'three';
 
-// ─── GreenhouseFrame ──────────────────────────────────────────────────────────
-/**
- * Glass + metal perimeter frame along the north and south board edges.
- * Columns carry hanging vines. Exposes a single `mesh` (THREE.Group).
- *
- * @param {{ width?: number, depth?: number }} options
- */
 export class GreenhouseFrame {
   constructor({ width = 24, depth = 16 } = {}) {
     this.mesh = new THREE.Group();
@@ -46,22 +39,19 @@ export class GreenhouseFrame {
       { x1: colXs[3], x2: halfW },
     ];
 
-    const wallZ = D / 2 - 0.2; // ±7.8 for default D=16
+    const wallZ = D / 2 - 0.2;
 
     [-wallZ, wallZ].forEach(wz => {
-      // LED stubs at column bases
       colXs.forEach(cx => {
         const stub = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.05, 0.10), ledMat);
         stub.position.set(cx, baseY + 0.025, wz);
         group.add(stub);
       });
 
-      // Metal top rail
       const rail = new THREE.Mesh(new THREE.BoxGeometry(W, 0.075, 0.11), metalMat);
       rail.position.set(0, baseY + wallH, wz);
       group.add(rail);
 
-      // Vertical columns + hanging vines
       colXs.forEach((cx, ci) => {
         const col = new THREE.Mesh(new THREE.CylinderGeometry(colR, colR, wallH, 6), metalMat);
         col.position.set(cx, baseY + wallH / 2, wz);
@@ -97,7 +87,6 @@ export class GreenhouseFrame {
         }
       });
 
-      // Glass panels between columns
       panelSegs.forEach(({ x1, x2 }) => {
         const w = Math.abs(x2 - x1);
         const midX = (x1 + x2) / 2;

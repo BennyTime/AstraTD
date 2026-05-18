@@ -1,9 +1,4 @@
-/**
- * HUD – updates DOM elements based on GameState.
- * The HUD HTML is injected into `#hud` in index.html.
- */
 export class HUD {
-  /** @param {HTMLElement} root */
   constructor(root) {
     this.root = root;
     this._buildDOM();
@@ -40,7 +35,6 @@ export class HUD {
       </div>
     `;
 
-    // Standalone centred nexus HP bar at the top
     const nexusBar = document.createElement('div');
     nexusBar.id = 'hud-nexus-bar';
     nexusBar.innerHTML = `
@@ -53,7 +47,6 @@ export class HUD {
     `;
     document.getElementById('app').appendChild(nexusBar);
 
-    // Boss HP bar (hidden by default)
     const bossBar = document.createElement('div');
     bossBar.id = 'hud-boss-bar';
     bossBar.classList.add('hud-boss-hidden');
@@ -70,7 +63,6 @@ export class HUD {
     this._bossFill = null; 
     this._bossValEl = null;
 
-    // Separate top-right menu button (outside the HUD panel)
     const menuBtn = document.createElement('button');
     menuBtn.id = 'hud-menu-btn';
     menuBtn.textContent = 'MAIN MENU';
@@ -86,7 +78,7 @@ export class HUD {
     this._msg = document.getElementById('hud-msg');
   }
 
-  /** @param {import('../core/GameState.js').GameState} state */
+  
   bind(state, onWaveStart, onMainMenu) {
     this._maxHP = state.config.nexusMaxHP;
     this._sync(state);
@@ -131,7 +123,7 @@ export class HUD {
   _syncWave(state)    { this._wave.textContent    = state.wave || '—'; }
   _syncEnemies(state) { this._enemies.textContent = state.phase === 'combat' ? state.enemiesLeft : '—'; }
 
-  /** Show the boss bar and set max HP */
+  
   showBossBar(maxHp, type = 'boss') {
     this._bossFill = document.getElementById('hud-boss-fill');
     this._bossValEl = document.getElementById('hud-boss-val');
@@ -142,7 +134,7 @@ export class HUD {
     this.updateBossBar(maxHp);
   }
 
-  /** Update boss bar with current HP */
+  
   updateBossBar(hp) {
     if (!this._bossFill) return;
     const pct = Math.max(0, hp / this._bossMaxHp);
@@ -151,7 +143,7 @@ export class HUD {
     this._bossValEl.textContent = Math.ceil(hp);
   }
 
-  /** Hide the boss bar */
+  
   hideBossBar() {
     this._bossBarEl.classList.add('hud-boss-hidden');
   }
@@ -164,7 +156,6 @@ export class HUD {
   }
 }
 
-// ── inject HUD CSS ──────────────────────────────────────────────────────────
 const style = document.createElement('style');
 style.textContent = `
   #hud {

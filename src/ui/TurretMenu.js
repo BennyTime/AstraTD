@@ -1,9 +1,3 @@
-/**
- * TurretMenu – contextual popup shown when the player clicks a placed turret.
- *
- * Displays turret stats, lets the player switch targeting mode (closest / first)
- * and sell the turret for 50 % of its purchase cost.
- */
 export class TurretMenu {
   constructor() {
     this._panel = document.createElement('div');
@@ -17,8 +11,6 @@ export class TurretMenu {
     this._injectCSS();
   }
 
-  // ── Public API ────────────────────────────────────────────────────────────
-
   show(tower, { onSell, onTargetChange, onUpgrade }) {
     this._tower = tower;
     this._callbacks = { onSell, onTargetChange, onUpgrade };
@@ -26,7 +18,6 @@ export class TurretMenu {
     this._panel.style.display = 'block';
   }
 
-  /** Re-render in place (e.g. after an upgrade) without repositioning. */
   refresh() {
     if (this._tower) this._render();
   }
@@ -39,7 +30,6 @@ export class TurretMenu {
   get isOpen() { return this._panel.style.display !== 'none'; }
   get activeTower() { return this._tower; }
 
-  // ── Internal ──────────────────────────────────────────────────────────────
 
   _render() {
     const t = this._tower;
@@ -48,7 +38,6 @@ export class TurretMenu {
     const upg = (t.upgrades || [])[t.level];
     const maxLevel = t.level >= 3;
 
-    // Build stat-delta lines for the next upgrade
     function deltaBadge(multiplier, label) {
       if (!multiplier || multiplier === 1.0) return '';
       const pct = Math.round((multiplier - 1) * 100);

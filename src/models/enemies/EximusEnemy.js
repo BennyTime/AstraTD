@@ -3,9 +3,6 @@ import * as THREE from 'three';
 /**
  * EximusEnemy – a heavy commander unit that spawns two StandardEnemies on death.
  *
- * Same bipedal frame as StandardEnemy but ~30% larger, darker purple tones,
- * and two large spawn-pods mounted on the back.
- *
  * Game mechanic (handled by Game.js):
  *   On kill → spawn 2 StandardEnemies at the Eximus's current pathT position.
  *   stats.spawnOnDeath gives the count.
@@ -34,28 +31,22 @@ const _geo = {
   torso: new THREE.BoxGeometry(0.72, 0.72, 0.44),
   chestCore: new THREE.CylinderGeometry(0.10, 0.10, 0.16, 12),
   conduit: new THREE.BoxGeometry(0.04, 0.28, 0.03),
-  // Energy cape
   capePanel: new THREE.BoxGeometry(0.90, 0.70, 0.04),
   capeGlow: new THREE.BoxGeometry(0.04, 0.66, 0.04),
-  // Pauldrons
   pauldron: new THREE.BoxGeometry(0.20, 0.25, 0.30),
   pauldronSpike: new THREE.ConeGeometry(0.055, 0.30, 4),
-  // Head
   head: new THREE.BoxGeometry(0.48, 0.40, 0.38),
   visor: new THREE.BoxGeometry(0.38, 0.10, 0.07),
   headCrest: new THREE.BoxGeometry(0.05, 0.42, 0.22),
-  // Arms
   upperArm: new THREE.BoxGeometry(0.15, 0.36, 0.15),
   elbow: new THREE.SphereGeometry(0.080, 8, 8),
   lowerArm: new THREE.BoxGeometry(0.13, 0.32, 0.13),
   fist: new THREE.BoxGeometry(0.16, 0.13, 0.16),
-  // Pelvis / legs
   pelvis: new THREE.BoxGeometry(0.56, 0.26, 0.36),
   upperLeg: new THREE.BoxGeometry(0.19, 0.38, 0.19),
   knee: new THREE.SphereGeometry(0.10, 8, 8),
   lowerLeg: new THREE.BoxGeometry(0.17, 0.36, 0.17),
   foot: new THREE.BoxGeometry(0.20, 0.12, 0.30),
-  // Reactor backpack
   reactorBody: new THREE.CylinderGeometry(0.16, 0.20, 0.50, 10),
   reactorDome: new THREE.SphereGeometry(0.18, 10, 8),
   reactorVein: new THREE.BoxGeometry(0.05, 0.44, 0.04),
@@ -86,13 +77,11 @@ export function createEximusEnemy() {
   torsoMesh.castShadow = true;
   torso.add(torsoMesh);
 
-  // Central chest core glow
   const chestCore = new THREE.Mesh(_geo.chestCore, accentMat);
   chestCore.rotation.x = Math.PI / 2;
   chestCore.position.set(0, 0.10, 0.23);
   torso.add(chestCore);
 
-  // Power conduits on chest
   for (let i = -1; i <= 1; i += 2) {
     for (let j = 0; j < 2; j++) {
       const cond = new THREE.Mesh(_geo.conduit, accentMat);
@@ -101,7 +90,6 @@ export function createEximusEnemy() {
     }
   }
 
-  // Energy cape panel behind torso
   const cape = new THREE.Mesh(_geo.capePanel, darkMat);
   cape.position.set(0, -0.02, -0.26);
   torso.add(cape);
@@ -114,7 +102,6 @@ export function createEximusEnemy() {
   capeGlowR.position.set( 0.47, -0.02, -0.26);
   torso.add(capeGlowR);
 
-  // Pauldrons with crystal spikes
   for (const side of ['L', 'R']) {
     const sign = side === 'L' ? -1 : 1;
     const pg = new THREE.Group();
@@ -145,7 +132,6 @@ export function createEximusEnemy() {
   visor.position.set(0, 0.06, 0.20);
   headGroup.add(visor);
 
-  // Blade crown fin
   const headCrest = new THREE.Mesh(_geo.headCrest, darkMat);
   headCrest.position.set(0, 0.41, 0);
   headGroup.add(headCrest);
@@ -247,7 +233,6 @@ export function createEximusEnemy() {
     foot.position.set(0, -0.38, 0.05);
     kneePivot.add(foot);
 
-    // Knee strip accent
     const strip = new THREE.Mesh(
       new THREE.BoxGeometry(0.16, 0.05, 0.07),
       accentMat
@@ -331,7 +316,6 @@ export function createEximusEnemy() {
 
       torso.position.y = 1.0 * SCALE + Math.abs(Math.sin(walkPhase)) * 0.04;
 
-      // Pod glow pulse
       reactorGlowMat.emissiveIntensity = 1.6 + Math.sin(t * 4) * 0.6;
       visorMat.emissiveIntensity = 1.9 + Math.sin(t * 6) * 0.3;
       accentMat.emissiveIntensity = 1.2 + Math.sin(t * 3) * 0.4;
@@ -342,7 +326,6 @@ export function createEximusEnemy() {
       if (!breakReady) {
         const flinch = Math.sin((Math.min(deathTimer, 0.15) / 0.15) * Math.PI);
         torso.rotation.x = -flinch * 0.35;
-        // Pods crack visually – brighten dramatically
         reactorGlowMat.emissiveIntensity = 2.0 + flinch * 4;
 
         if (deathTimer >= 0.15) {

@@ -1,4 +1,3 @@
-// GameState – single source of truth for live game data
 export class GameState {
   constructor(config) {
     this.config = config;
@@ -11,7 +10,7 @@ export class GameState {
     this.stardust = c.startingStardust;
     this.wave = 0;
     this.enemiesLeft = 0;
-    this.phase = 'menu';   // 'menu' | 'build' | 'combat' | 'gameover' | 'victory'
+    this.phase = 'menu';
     this.score = 0;
     this._listeners = {};
   }
@@ -62,7 +61,6 @@ export class GameState {
   }
 
   enemyReachedEnd() {
-    // Enemy dealt damage — no stardust or score reward
     this.enemiesLeft = Math.max(0, this.enemiesLeft - 1);
     this.emit('enemyKilled', { enemiesLeft: this.enemiesLeft });
     if (this.enemiesLeft <= 0 && this.phase === 'combat') {

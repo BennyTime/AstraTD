@@ -3,11 +3,6 @@ import * as THREE from 'three';
 /**
  * BossEnemy – "Eximus, Father of the Valken". Wave 10 final boss.
  *
- * A colossal dark-emperor mech: brutalist cathedral helm with a triple
- * glowing visor, massive symmetric war-arms with forearm blades, enormous
- * pauldrons each crowned with three spines, a diamond of five exposed chest
- * cores, and a towering dorsal spine array rising from the back.
- *
  * Hierarchy:
  *   group
  *   ├─ torso
@@ -38,39 +33,31 @@ export const BossEnemyStats = {
 };
 
 const _geo = {
-  // Torso
   torso: new THREE.BoxGeometry(1.40, 0.92, 0.72),
   torsoLip: new THREE.BoxGeometry(1.24, 0.18, 0.78),
-  // Chest cores
   core: new THREE.SphereGeometry(0.095, 10, 8),
   coreRing: new THREE.TorusGeometry(0.125, 0.022, 6, 18),
-  // Pauldrons
   pauldronBase: new THREE.BoxGeometry(0.58, 0.76, 0.56),
   pauldronSpike: new THREE.ConeGeometry(0.075, 0.46, 5),
   pauldronGlow: new THREE.BoxGeometry(0.06, 0.60, 0.06),
-  // Head
   head: new THREE.BoxGeometry(0.68, 0.56, 0.58),
   visorSlit: new THREE.BoxGeometry(0.15, 0.10, 0.07),
   crestFin: new THREE.BoxGeometry(0.06, 0.46, 0.34),
   jawPlate: new THREE.BoxGeometry(0.58, 0.20, 0.52),
   cheek: new THREE.BoxGeometry(0.10, 0.32, 0.12),
-  // Arms (symmetric)
   upperArm: new THREE.BoxGeometry(0.30, 0.58, 0.30),
   elbow: new THREE.SphereGeometry(0.16, 8, 8),
   forearm: new THREE.BoxGeometry(0.28, 0.52, 0.28),
   forearmBlade: new THREE.BoxGeometry(0.06, 0.48, 0.14),
   fist: new THREE.BoxGeometry(0.30, 0.26, 0.28),
   fistSpike: new THREE.ConeGeometry(0.07, 0.22, 5),
-  // Spine array base
   spineBase: new THREE.BoxGeometry(0.76, 0.14, 0.18),
-  // Pelvis / legs
   pelvis: new THREE.BoxGeometry(0.96, 0.38, 0.62),
   upperLeg: new THREE.BoxGeometry(0.32, 0.64, 0.32),
   kneePad: new THREE.BoxGeometry(0.32, 0.16, 0.16),
   lowerLeg: new THREE.BoxGeometry(0.28, 0.56, 0.28),
   footPlate: new THREE.BoxGeometry(0.38, 0.14, 0.52),
   heel: new THREE.BoxGeometry(0.14, 0.12, 0.24),
-  // Debris
   shard: new THREE.IcosahedronGeometry(0.15, 0),
 };
 
@@ -98,7 +85,6 @@ export function createBossEnemy() {
   torsoMesh.castShadow = true;
   torso.add(torsoMesh);
 
-  // Top and bottom armour lip bands
   const torsoLipTop = new THREE.Mesh(_geo.torsoLip, armorMat);
   torsoLipTop.position.y = 0.55;
   torso.add(torsoLipTop);
@@ -118,14 +104,12 @@ export function createBossEnemy() {
     base.castShadow = true;
     pg.add(base);
 
-    // Three spikes along the top edge
     for (let i = -1; i <= 1; i++) {
       const spike = new THREE.Mesh(_geo.pauldronSpike, accentMat);
       spike.position.set(i * 0.17, 0.61, 0);
       pg.add(spike);
     }
 
-    // Outer glow strip
     const glowStrip = new THREE.Mesh(_geo.pauldronGlow, accentMat);
     glowStrip.position.set(sign * 0.30, 0, 0.22);
     pg.add(glowStrip);
@@ -135,26 +119,23 @@ export function createBossEnemy() {
 
   // ── Head ──────────────────────────────────────────────────────────────────
   const headGroup = new THREE.Group();
-  headGroup.position.y = 0.74;  // torso half (0.46) + head half (0.28) = sits on torso top
+  headGroup.position.y = 0.74;
   torso.add(headGroup);
 
   const headMesh = new THREE.Mesh(_geo.head, bodyMat);
   headMesh.castShadow = true;
   headGroup.add(headMesh);
 
-  // Triple glowing visor slits
   for (let i = -1; i <= 1; i++) {
     const slit = new THREE.Mesh(_geo.visorSlit, visorMat);
     slit.position.set(i * 0.22, 0.09, 0.30);
     headGroup.add(slit);
   }
 
-  // Crown fin on top
   const crestFin = new THREE.Mesh(_geo.crestFin, armorMat);
   crestFin.position.set(0, 0.51, 0);
   headGroup.add(crestFin);
 
-  // Crest glow edge
   const crestGlow = new THREE.Mesh(
     new THREE.BoxGeometry(0.04, 0.42, 0.06),
     accentMat
@@ -162,12 +143,10 @@ export function createBossEnemy() {
   crestGlow.position.set(0, 0.51, 0.16);
   headGroup.add(crestGlow);
 
-  // Jaw plate
   const jaw = new THREE.Mesh(_geo.jawPlate, armorMat);
   jaw.position.set(0, -0.22, 0);
   headGroup.add(jaw);
 
-  // Cheek guards
   for (const sign of [-1, 1]) {
     const cheek = new THREE.Mesh(_geo.cheek, armorMat);
     cheek.position.set(sign * 0.38, 0.02, 0.22);
@@ -175,7 +154,6 @@ export function createBossEnemy() {
   }
 
   // ── Chest cores (3: centre + flanks) ─────────────────────────────────────
-  // Diamond of 5 chest cores
   const corePositions = [
     [0, 0.18, 0.38],
     [-0.24, 0, 0.38],
@@ -219,7 +197,6 @@ export function createBossEnemy() {
     fa.castShadow = true;
     lowerGroup.add(fa);
 
-    // Side blade on forearm
     const blade = new THREE.Mesh(_geo.forearmBlade, accentMat);
     blade.position.set(sign * 0.19, -0.26, 0.06);
     lowerGroup.add(blade);
@@ -293,7 +270,6 @@ export function createBossEnemy() {
     boot.position.set(0, -0.62, 0.10);
     kneePivot.add(boot);
 
-    // Heel spur
     const heel = new THREE.Mesh(_geo.heel, armorMat);
     heel.position.set(0, -0.60, -0.20);
     kneePivot.add(heel);
@@ -359,7 +335,7 @@ export function createBossEnemy() {
     t += delta;
 
     if (state === 'walk') {
-      walkPhase += delta * 1.6; // heavy, deliberate stride
+      walkPhase += delta * 1.6;
 
       const swing = Math.sin(walkPhase) * 0.50;
       legL.hipPivot.rotation.x =  swing;
@@ -367,15 +343,12 @@ export function createBossEnemy() {
       legL.kneePivot.rotation.x = Math.max(0, -Math.sin(walkPhase)) * 0.55;
       legR.kneePivot.rotation.x = Math.max(0,  Math.sin(walkPhase)) * 0.55;
 
-      // Arms swing slightly
       armL.armGroup.rotation.x = -swing * 0.28;
       armR.armGroup.rotation.x =  swing * 0.28;
 
-      // Menacing torso sway
       torso.rotation.z = Math.sin(walkPhase * 0.5) * 0.04;
       torso.position.y = 1.4 * SCALE + Math.abs(Math.sin(walkPhase)) * -0.04;
 
-      // Core pulse
       coreMat.emissiveIntensity = 3.5 + Math.sin(t * 4)  * 0.8;
       coreRingMat.emissiveIntensity = 2.0 + Math.sin(t * 3)  * 0.5;
       visorMat.emissiveIntensity = 3.0 + Math.sin(t * 6)  * 0.5;
@@ -454,7 +427,6 @@ export function createBossEnemy() {
       explodeTime += delta;
 
       if (explodeTime < JOY_DURATION) {
-        // Menacing pause then lunge
         const lunge = Math.min(1, explodeTime / 0.4);
         armL.armGroup.rotation.x = lunge * -0.90;
         armR.armGroup.rotation.x = lunge * -0.90;

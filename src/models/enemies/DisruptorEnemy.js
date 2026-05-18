@@ -65,18 +65,15 @@ export function createDisruptorEnemy() {
   bodyGroup.position.y = 1.0 * SCALE;
   group.add(bodyGroup);
 
-  // Octahedron hull (main head shape)
   const hull = new THREE.Mesh(_geo.hull, bodyMat);
   hull.scale.set(1, 0.85, 0.95);
   hull.castShadow = true;
   bodyGroup.add(hull);
 
-  // Flat cap on top
   const hullCap = new THREE.Mesh(_geo.hullCap, bodyMat);
   hullCap.position.y = 0.20;
   bodyGroup.add(hullCap);
 
-  // Eye
   const eye = new THREE.Mesh(_geo.eye, eyeMat);
   eye.position.set(0, 0.04, 0.28);
   bodyGroup.add(eye);
@@ -134,7 +131,6 @@ export function createDisruptorEnemy() {
     upper.castShadow = true;
     pivot.add(upper);
 
-    // Knee socket
     const knee = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), jointMat);
     knee.position.set(0.44, -0.46, 0);
     pivot.add(knee);
@@ -201,30 +197,24 @@ export function createDisruptorEnemy() {
     if (state === 'walk') {
       walkPhase += delta * 2.2;
 
-      // Dish spins continuously
       dishGroup.rotation.z += delta * 3.5;
 
-      // EMP rings pulse + slowly expand
       const pulse = Math.sin(t * 2.5);
       empMat.opacity = 0.4 + pulse * 0.22;
       empMat.emissiveIntensity = 1.6 + pulse * 0.6;
 
-      // Rings oscillate slightly in scale
       const rs = 1 + Math.sin(t * 2.5) * 0.08;
       empRing.scale.setScalar(rs);
-      empRing2.scale.setScalar(1 / rs);  // opposite phase
+      empRing2.scale.setScalar(1 / rs);
 
-      // Tripod walking: legs 0 and 2 advance together, leg 1 alone
       const swingA =  Math.sin(walkPhase) * 0.28;
       const swingB = -Math.sin(walkPhase) * 0.28;
       legPivots[0].rotation.x = swingA;
       legPivots[2].rotation.x = swingA;
       legPivots[1].rotation.x = swingB;
 
-      // Body bob
       bodyGroup.position.y = 1.0 * SCALE + Math.abs(Math.sin(walkPhase)) * 0.04;
 
-      // Eye flicker
       eyeMat.emissiveIntensity = 2.8 + Math.sin(t * 7) * 0.5;
 
     } else if (state === 'death') {

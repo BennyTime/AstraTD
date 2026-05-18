@@ -17,18 +17,13 @@ import * as THREE from 'three';
  *   │   │   └─ lowerLegL/R (pivot at knee)
  *   │   │       └─ foot
  *   │   └─ backBooster
- *
- * Animations:
- *   - walk   : leg/arm swing cycle
- *   - death  : crumple fall + fade
- *   - explode: damage burst at nexus
  */
 
 export const StandardEnemyStats = {
   hp: 60,
   speed: 2,
-  damage: 20, // nexus damage on reach
-  reward: 25,  // stardust on kill
+  damage: 20,
+  reward: 25,
 };
 
 const _geo = {
@@ -66,7 +61,7 @@ export function createStandardEnemy() {
   const darkMat = new THREE.MeshStandardMaterial({ color: 0x120820, roughness: 0.6, metalness: 0.7 });
   const shardMat = new THREE.MeshStandardMaterial({ color: 0xff2060, emissive: new THREE.Color(0xff2060), emissiveIntensity: 2, transparent: true });
 
-  const SCALE = 0.72; // overall size
+  const SCALE = 0.72;
 
   // ── Torso ──
   const torso = new THREE.Group();
@@ -77,7 +72,6 @@ export function createStandardEnemy() {
   torsoMesh.castShadow = true;
   torso.add(torsoMesh);
 
-  // Chest armour plates
   const chestL = new THREE.Mesh(_geo.chestPlate, darkMat);
   chestL.position.set(-0.14, 0, 0.16);
   torso.add(chestL);
@@ -85,7 +79,6 @@ export function createStandardEnemy() {
   chestR.position.set(0.14, 0, 0.16);
   torso.add(chestR);
 
-  // Chest core glow
   const chestGlow = new THREE.Mesh(_geo.chestGlow, accentMat);
   chestGlow.rotation.x = Math.PI / 2;
   chestGlow.position.set(0, 0.04, 0.17);
@@ -100,12 +93,10 @@ export function createStandardEnemy() {
   headMesh.castShadow = true;
   headGroup.add(headMesh);
 
-  // Visor strip
   const visor = new THREE.Mesh(_geo.visor, visorMat);
   visor.position.set(0, 0.04, 0.16);
   headGroup.add(visor);
 
-  // Antenna on head
   const ant = new THREE.Mesh(_geo.antenna, jointMat);
   ant.position.set(0.1, 0.22, 0);
   headGroup.add(ant);
@@ -120,12 +111,10 @@ export function createStandardEnemy() {
     shoulder.position.set(sign * 0.32, 0.18, 0);
     torso.add(shoulder);
 
-    // Shoulder pad
     const pad = new THREE.Mesh(_geo.shoulderPad, darkMat);
     pad.position.set(sign * 0.06, 0, 0);
     shoulder.add(pad);
 
-    // Upper arm pivot (at shoulder)
     const upperArmPivot = new THREE.Group();
     shoulder.add(upperArmPivot);
 
@@ -134,12 +123,13 @@ export function createStandardEnemy() {
     upperArm.castShadow = true;
     upperArmPivot.add(upperArm);
 
-    // Elbow joint
     const elbow = new THREE.Mesh(_geo.elbow, jointMat);
     elbow.position.y = -0.28;
     upperArmPivot.add(elbow);
 
-    // Lower arm pivot (at elbow)
+    const lowerArmPivot = new THREE.Group();
+    lowerArmPivot.position.y = -0.28;
+    upperArmPivot.add(lowerArmPivot);
     const lowerArmPivot = new THREE.Group();
     lowerArmPivot.position.y = -0.28;
     upperArmPivot.add(lowerArmPivot);
@@ -149,7 +139,6 @@ export function createStandardEnemy() {
     lowerArm.castShadow = true;
     lowerArmPivot.add(lowerArm);
 
-    // Fist
     const fist = new THREE.Mesh(_geo.fist, darkMat);
     fist.position.y = -0.28;
     lowerArmPivot.add(fist);
@@ -168,7 +157,6 @@ export function createStandardEnemy() {
   pelvisMesh.castShadow = true;
   pelvis.add(pelvisMesh);
 
-  // Back booster pack
   const booster = new THREE.Mesh(_geo.booster, darkMat);
   booster.position.set(0, 0.15, -0.22);
   torso.add(booster);
@@ -181,7 +169,6 @@ export function createStandardEnemy() {
   function makeLeg(side) {
     const sign = side === 'L' ? -1 : 1;
 
-    // Hip pivot
     const hipPivot = new THREE.Group();
     hipPivot.position.set(sign * 0.16, 0, 0);
     pelvis.add(hipPivot);
@@ -191,12 +178,10 @@ export function createStandardEnemy() {
     upperLeg.castShadow = true;
     hipPivot.add(upperLeg);
 
-    // Knee joint
     const knee = new THREE.Mesh(_geo.knee, jointMat);
     knee.position.y = -0.32;
     hipPivot.add(knee);
 
-    // Lower leg pivot
     const kneePivot = new THREE.Group();
     kneePivot.position.y = -0.32;
     hipPivot.add(kneePivot);
@@ -206,12 +191,10 @@ export function createStandardEnemy() {
     lowerLeg.castShadow = true;
     kneePivot.add(lowerLeg);
 
-    // Foot
     const foot = new THREE.Mesh(_geo.foot, darkMat);
     foot.position.set(0, -0.32, 0.04);
     kneePivot.add(foot);
 
-    // Knee accent strip
     const strip = new THREE.Mesh(_geo.kneeStrip, accentMat);
     strip.position.set(0, -0.3, 0.07);
     hipPivot.add(strip);
@@ -246,7 +229,7 @@ export function createStandardEnemy() {
   }
 
   // ── State ─────────────────────────────────────────────────────────────
-  let state = 'walk';  // 'walk' | 'death' | 'explode'
+  let state = 'walk';
   let walkPhase = 0;
   let deathTimer = 0;
   let breakReady = false;
@@ -280,38 +263,31 @@ export function createStandardEnemy() {
       walkPhase += delta * 3.5;
       const swing = Math.sin(walkPhase) * 0.55;
 
-      // Legs oppose each other
       legL.hipPivot.rotation.x = swing;
       legR.hipPivot.rotation.x = -swing;
       legL.kneePivot.rotation.x = Math.max(0, -Math.sin(walkPhase)) * 0.7;
       legR.kneePivot.rotation.x = Math.max(0, Math.sin(walkPhase)) * 0.7;
 
-      // Arms swing opposite to legs
       armL.upperArmPivot.rotation.x = -swing * 0.6;
       armR.upperArmPivot.rotation.x = swing * 0.6;
       armL.lowerArmPivot.rotation.x = Math.abs(swing) * 0.3;
       armR.lowerArmPivot.rotation.x = Math.abs(swing) * 0.3;
 
-      // Torso bob
       torso.position.y = 1.0 * SCALE + Math.abs(Math.sin(walkPhase)) * 0.03;
 
-      // Visor glow flicker
       visorMat.emissiveIntensity = 1.8 + Math.sin(t * 5) * 0.3;
 
     } else if (state === 'death') {
       deathTimer += delta;
 
       if (!breakReady) {
-        // ── Flinch (0 → 0.13s): hit-flash before breaking apart ──────────
         const flinch = Math.sin((Math.min(deathTimer, 0.13) / 0.13) * Math.PI);
         torso.rotation.x = -flinch * 0.3;
-        visorMat.emissiveIntensity = 2.0 + flinch * 2.5;  // bright flicker
+        visorMat.emissiveIntensity = 2.0 + flinch * 2.5;
 
         if (deathTimer >= 0.13) {
           breakReady = true;
 
-          // Reparent legs (children of pelvis) directly to group,
-          // preserving their current world transform.
           [legL.hipPivot, legR.hipPivot].forEach(hip => {
             const wp = new THREE.Vector3();
             hip.getWorldPosition(wp);
@@ -326,7 +302,6 @@ export function createStandardEnemy() {
             hip.quaternion.copy(gq.invert().multiply(wq));
           });
 
-          // Assign outward velocities – spread ≈90° apart so pieces scatter
           [torso, pelvis, legL.hipPivot, legR.hipPivot].forEach((obj, i) => {
             const angle = (i * Math.PI / 2) + (Math.random() - 0.5) * 0.9;
             const spd   = 2.0 + Math.random() * 2.5;
@@ -345,18 +320,16 @@ export function createStandardEnemy() {
         }
 
       } else {
-        // ── Break phase: pieces fly apart ─────────────────────────────────
         const bTime = deathTimer - 0.13;
 
         breakParts.forEach(obj => {
           obj.position.addScaledVector(obj.userData.breakVel, delta);
-          obj.userData.breakVel.y -= delta * 9.5; // gravity
+          obj.userData.breakVel.y -= delta * 9.5;
           obj.rotation.x += obj.userData.breakRot.x * delta;
           obj.rotation.y += obj.userData.breakRot.y * delta;
           obj.rotation.z += obj.userData.breakRot.z * delta;
         });
 
-        // Fade all materials from 0.2s after break
         if (bTime > 0.20) {
           const fade = 1 - Math.min(1, (bTime - 0.20) / 0.90);
           [bodyMat, accentMat, visorMat, jointMat, darkMat].forEach(m => {
@@ -375,19 +348,15 @@ export function createStandardEnemy() {
       explodeTime += delta;
 
       if (explodeTime < JOY_DURATION) {
-        // ── Joy phase: celebrate before detonating ──
         const raise = Math.min(1, explodeTime / 0.25);
-        // Arms rigid straight up
         armL.upperArmPivot.rotation.x = -Math.PI * 0.9 * raise;
         armR.upperArmPivot.rotation.x = -Math.PI * 0.9 * raise;
         armL.lowerArmPivot.rotation.x = 0;
         armR.lowerArmPivot.rotation.x = 0;
 
-        // Two hops
         const hopCycle = Math.max(0, Math.sin(explodeTime * Math.PI / JOY_DURATION * 4));
         group.position.y = (group.userData._joyBaseY || 0.186) + hopCycle * 0.35;
 
-        // Legs straight during hop
         legL.hipPivot.rotation.x = 0;
         legR.hipPivot.rotation.x = 0;
         legL.kneePivot.rotation.x = 0;
@@ -398,11 +367,9 @@ export function createStandardEnemy() {
         visorMat.emissiveIntensity = 2.5 + Math.sin(t * 12) * 0.6;
 
       } else {
-        // ── Burst phase ──
         const burstTime = explodeTime - JOY_DURATION;
 
         if (burstTime < 0.05) {
-          // First frame of burst: spawn shards
           if (!group.userData._shardSpawned) {
             group.userData._shardSpawned = true;
             group.position.y = group.userData._joyBaseY || 0.186;
@@ -418,7 +385,6 @@ export function createStandardEnemy() {
           }
         }
 
-        // Update shard positions/rotations; opacity is shared via shardMat
         const shardOpacity = Math.max(0, 1 - burstTime / 1.0);
         shardMat.opacity = shardOpacity;
         shards.forEach(s => {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GameConfig } from '../config/GameConfig.js';
+import { GameConfig, MAPS } from '../config/GameConfig.js';
 import { WaveConfig } from '../config/WaveConfig.js';
 import { GameState } from './GameState.js';
 import { HUD } from '../ui/HUD.js';
@@ -25,7 +25,6 @@ import { createCryoEmitter, CryoEmitterStats } from '../models/towers/CryoEmitte
 import { TurretMenu } from '../ui/TurretMenu.js';
 import { TowerShop } from '../ui/TowerShop.js';
 
-// Tower definitions (used by TowerShop and _placeTower)
 const TOWER_DEFS = [
   {
     key: 'laser',
@@ -60,9 +59,9 @@ const TOWER_DEFS = [
     create: createNovaCannon,
     stats: NovaCannonStats,
     upgrades: [
-      { label: 'Wide Blast',     cost: 100, damageMultiplier: 1.2, rangeMultiplier: 1.3, fireRateMultiplier: 1.0 },
-      { label: 'Hot Core',       cost: 150, damageMultiplier: 1.6, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
-      { label: 'Nova Surge',     cost: 220, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.4 },
+      { label: 'Wide Blast', cost: 100, damageMultiplier: 1.2, rangeMultiplier: 1.3, fireRateMultiplier: 1.0 },
+      { label: 'Hot Core', cost: 150, damageMultiplier: 1.6, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
+      { label: 'Nova Surge', cost: 220, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.4 },
     ],
   },
   {
@@ -79,9 +78,9 @@ const TOWER_DEFS = [
     create: createVoidSniper,
     stats: VoidSniperStats,
     upgrades: [
-      { label: 'Void Scope',    cost: 110, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.0 },
-      { label: 'Phase Round',   cost: 160, damageMultiplier: 1.8, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
-      { label: 'Singularity',   cost: 250, damageMultiplier: 2.0, rangeMultiplier: 1.3, fireRateMultiplier: 1.3 },
+      { label: 'Void Scope', cost: 110, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.0 },
+      { label: 'Phase Round', cost: 160, damageMultiplier: 1.8, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
+      { label: 'Singularity', cost: 250, damageMultiplier: 2.0, rangeMultiplier: 1.3, fireRateMultiplier: 1.3 },
     ],
   },
   {
@@ -98,14 +97,13 @@ const TOWER_DEFS = [
     create: createCryoEmitter,
     stats: CryoEmitterStats,
     upgrades: [
-      { label: 'Deep Freeze',   cost: 90,  damageMultiplier: 1.0, rangeMultiplier: 1.3, fireRateMultiplier: 1.3 },
-      { label: 'Cryo Shards',  cost: 130, damageMultiplier: 2.0, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
+      { label: 'Deep Freeze', cost: 90, damageMultiplier: 1.0, rangeMultiplier: 1.3, fireRateMultiplier: 1.3 },
+      { label: 'Cryo Shards', cost: 130, damageMultiplier: 2.0, rangeMultiplier: 1.0, fireRateMultiplier: 1.0 },
       { label: 'Absolute Zero', cost: 200, damageMultiplier: 1.5, rangeMultiplier: 1.2, fireRateMultiplier: 1.5 },
     ],
   },
 ];
 
-// Lookup table: type string → { create, stats }
 const ENEMY_FACTORIES = {
   standard: { create: createStandardEnemy, stats: StandardEnemyStats },
   fast: { create: createFastEnemy, stats: FastEnemyStats },
@@ -129,19 +127,16 @@ export class Game {
     this._clock = new THREE.Clock(false);
     this._spawnQueue = 0;
     this._spawnAccum = 0;
-    this._spawnTypeQueue = [];   // ordered list of type strings for current wave
-    this._spawnInterval = 1200; // ms; overridden per wave
-    this._deferredSpawns = [];   // { type, pathT } queued mid-frame (eximus children)
-    this._selectedTowerType = null; // currently selected tower type key from shop
+    this._spawnTypeQueue = [];   
+    this._spawnInterval = 1200; 
+    this._deferredSpawns = [];   
+    this._selectedTowerType = null; 
   }
-
-  // ── Bootstrap ────────────────────────────────────────────────────────────
 
   start() {
     this._initRenderer();
     this._initScene();
     this._initLights();
-    this._buildWorld();
     this._initCamera();
     this._initInteraction();
     this._initUI();
@@ -172,22 +167,14 @@ export class Game {
   }
 
   _initLights() {
-    // Ambient — warm-toned so the organic board colours read correctly
     const ambient = new THREE.AmbientLight(0x8cb8d8, 2.2);
     this._scene.add(ambient);
-
-    // Hemisphere: warm sky above, green-earth below — gives the "daylit greenhouse" feel
     const hemi = new THREE.HemisphereLight(0xfff4cc, 0x3a6e28, 1.6);
     this._scene.add(hemi);
-
-    // Key / shadow light is owned by the Sun object — added in _buildWorld.
-
-    // Fill light (cool blue from left)
     const fill = new THREE.DirectionalLight(0x6080d0, 1.0);
     fill.position.set(-10, 8, -5);
     this._scene.add(fill);
-
-    // Rim light (magenta accent from behind)
+    
     const rim = new THREE.DirectionalLight(0x9030d0, 0.55);
     rim.position.set(0, 5, -20);
     this._scene.add(rim);
@@ -203,34 +190,26 @@ export class Game {
   _buildWorld() {
     const sc = this._scene;
     const wp = this._config.activeMap.waypoints;
-
-    // ── Starfield ──
+    
     const stars = createStarField();
     sc.add(stars.mesh);
     this._animFns.push(stars);
 
-    // ── Sun (visual + main shadow-casting key light) ──
-    // Placed far away so it reads as a distant star but stays roughly
-    // upper-right in the camera's field of view.
     const sunPos = new THREE.Vector3(25, 5, -40);
     const sun = createSun();
     sun.mesh.position.copy(sunPos);
     sc.add(sun.mesh);
-    sun.light.position.copy(sunPos); // light shines from sun toward (0,0,0)
+    sun.light.position.copy(sunPos); 
     sc.add(sun.light);
-    sc.add(sun.light.target); // target stays at default (0,0,0)
+    sc.add(sun.light.target); 
     this._animFns.push(sun);
 
-    // ── Board ──
     const board = new Board(this._config.activeMap);
     board.mesh.position.y = this._config.boardY;
     sc.add(board.mesh);
     this._animFns.push(board);
     this._board = board;
 
-    // ── Path curve (for enemy movement) ──
-    // Use a CurvePath of straight LineCurve3 segments so enemies follow
-    // the exact axis-aligned polyline that is drawn on the board.
     const yOff = this._config.boardY + 0.6;
     const pts = wp.map(([x, y, z]) => new THREE.Vector3(x, yOff, z));
     const curvePath = new THREE.CurvePath();
@@ -239,9 +218,19 @@ export class Game {
     }
     this._pathCurve = curvePath;
 
-    // ── Nexus ──
+    const firstWp = wp[0];
+    const lastWp  = wp[wp.length - 1];
+    const boardY  = this._config.boardY;
+    
     const nexus = createNexus();
-    nexus.mesh.position.set(12, this._config.boardY + 0.3, 5);
+    const nexusDx = lastWp[0] - wp[wp.length - 2][0];
+    const nexusDz = lastWp[2] - wp[wp.length - 2][2];
+    const nexusLen = Math.hypot(nexusDx, nexusDz);
+    nexus.mesh.position.set(
+      lastWp[0] + (nexusDx / nexusLen) * 1.0,
+      boardY + 0.3,
+      lastWp[2] + (nexusDz / nexusLen) * 1.0
+    );
     sc.add(nexus.mesh);
     this._animFns.push(nexus);
     this._nexus = nexus;
@@ -253,16 +242,16 @@ export class Game {
       }
     });
 
-    // ── Cargo Ship ──
     const ship = createCargoShip();
-    ship.mesh.position.set(-11, 0.0, 0.0);
-    ship.mesh.rotation.y = -Math.PI / 2;
-    ship.setBaseY(this._config.boardY + 4);
+    const shipDx = wp[1][0] - firstWp[0];
+    const shipDz = wp[1][2] - firstWp[2];
+    ship.mesh.position.set(firstWp[0], 0.0, firstWp[2]);
+    ship.mesh.rotation.y = Math.atan2(shipDx, shipDz) + Math.PI; 
+    ship.setBaseY(boardY + 4);
     sc.add(ship.mesh);
     this._animFns.push(ship);
     this._cargoShip = ship;
 
-    // ── Floating crystals ──────────────────────────────────────────────
     const crystalDefs = [
       { x: -13, z: 7, scale: 0.9, color: 0xcc44aa, orbitY: 3.5, phase: 0 },
       { x: -13, z: -7, scale: 0.7, color: 0x8844ff, orbitY: 3.0, phase: 1 },
@@ -286,7 +275,6 @@ export class Game {
       this._animFns.push(c);
     });
 
-    // Clusters – several grouped formations scattered around the scene
     const clusterDefs = [
       { x: 12, z: -3, y: 1, orbitY: 2.5 },
       { x: -16, z: 0, y: 1, orbitY: 2.8 },
@@ -307,7 +295,6 @@ export class Game {
     const boardY = this._config.boardY + 0.3;
     const planeY = new THREE.Plane(new THREE.Vector3(0, 1, 0), -boardY);
 
-    // Turret context menu
     this._turretMenu = new TurretMenu();
 
     this._renderer.domElement.addEventListener('click', e => {
@@ -315,12 +302,10 @@ export class Game {
       mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, this._camera);
 
-      // ── Check if clicking an existing tower (works in build + combat) ──
       if (this._state.phase === 'build' || this._state.phase === 'combat') {
         const towerMeshes = this._towers.map(t => t.mesh);
         const hits = raycaster.intersectObjects(towerMeshes, true);
         if (hits.length > 0) {
-          // Walk up to find the root tower mesh
           let obj = hits[0].object;
           while (obj.parent && !towerMeshes.includes(obj)) obj = obj.parent;
           const tower = this._towers.find(t => t.mesh === obj);
@@ -335,35 +320,22 @@ export class Game {
         }
       }
 
-      // Close the menu when clicking on empty space
       if (this._turretMenu.isOpen) { this._turretMenu.hide(); return; }
 
-      // ── Tower placement (build phase only) ──
       if (this._state.phase !== 'build') return;
-      if (!this._selectedTowerType) return; // no tower selected from shop
-
+      if (!this._selectedTowerType) return; 
       const hit = new THREE.Vector3();
       if (!raycaster.ray.intersectPlane(planeY, hit)) return;
 
-      // Snap to grid
       const gx = Math.round(hit.x);
       const gz = Math.round(hit.z);
 
-      // Must be on board
       if (Math.abs(gx) > 11 || Math.abs(gz) > 7) return;
-
-      // Can't place on path (rough check)
       if (this._isOnPath(gx, gz)) return;
-
-      // Can't overlap another tower
+      if (this._isOnDecoration(gx, gz)) return;
       if (this._towers.some(t => Math.abs(t.gx - gx) < 1 && Math.abs(t.gz - gz) < 1)) return;
-
-      // Cost
       const towerDef = TOWER_DEFS.find(d => d.key === this._selectedTowerType);
       if (!towerDef) return;
-      // Capture type now – spendStardust fires stardustChanged synchronously,
-      // which calls shop.updateStardust → _refreshAffordability → deselect(),
-      // clearing _selectedTowerType before we reach _placeTower.
       const typeKey = this._selectedTowerType;
       if (!this._state.spendStardust(towerDef.cost)) {
         this._hud.showMsg(`Need ${towerDef.cost} stardust!`);
@@ -374,7 +346,7 @@ export class Game {
       this._shop.deselect();
     });
 
-    // Space bar = start wave
+    
     window.addEventListener('keydown', e => {
       if (e.code === 'Space') {
         e.preventDefault();
@@ -398,6 +370,15 @@ export class Game {
     return false;
   }
 
+  _isOnDecoration(gx, gz) {
+    const veg = this._config.activeMap.vegetation ?? {};
+    const positions = [
+      ...(veg.crates   ?? []).map(([cx, cz]) => [cx, cz]),
+      ...(veg.planters ?? []).map(([cx, cz]) => [cx, cz]),
+    ];
+    return positions.some(([cx, cz]) => Math.abs(gx - cx) < 1.1 && Math.abs(gz - cz) < 1.1);
+  }
+
   _placeTower(gx, boardY, gz, typeKey) {
     const def = TOWER_DEFS.find(d => d.key === typeKey);
     if (!def) return;
@@ -419,12 +400,10 @@ export class Game {
       range: def.stats.range,
       damage: def.stats.damage,
       target: null,
-      // Type-specific flags
-      isAoe:      !!def.stats.isAoe,
+      isAoe: !!def.stats.isAoe,
       isAreaSlow: !!def.stats.isAreaSlow,
-      slowFactor:   def.stats.slowFactor   || 1.0,
+      slowFactor: def.stats.slowFactor   || 1.0,
       slowDuration: def.stats.slowDuration || 0,
-      // Metadata for TurretMenu
       name: turret.name,
       cost: def.stats.cost,
       totalSpent: def.stats.cost,
@@ -433,36 +412,32 @@ export class Game {
       targeting: 'closest',
     };
     this._towers.push(towerData);
-    // Keep the shop stardust display current
     this._shop?.updateStardust(this._state.stardust);
   }
 
   _initUI() {
-    // Tower Shop (bottom bar)
     this._shop = new TowerShop(TOWER_DEFS, (key) => {
       this._selectedTowerType = key;
-      // Toggle selection indicator on shop panel
       const panel = document.getElementById('tower-shop');
       if (panel) panel.classList.toggle('has-selection', key !== null);
     });
 
-    // HUD
     this._hud = new HUD(this._hudEl);
     this._hud.bind(this._state, () => this._startWave(), () => {
       this._fullReset();
       this._menu.show('main');
     });
 
-    // Bind wave-clear for HUD wave button re-enabling
     this._state.on('waveCleared', () => {
       this._hud.showMsg(`Wave ${this._state.wave} cleared! Build & prepare.`, 3000);
     });
 
-    // Navigation menu
-    this._menu = new NavigationMenu(this._mount);
+    this._menu = new NavigationMenu(this._mount, MAPS);
     this._menu.show('main');
 
-    this._menu.on('start', () => {
+    this._menu.on('start', (map) => {
+      this._config.activeMap = map;
+      this._buildWorld();
       this._state.phase = 'build';
       this._shop.show();
       this._shop.updateStardust(this._state.stardust);
@@ -470,10 +445,8 @@ export class Game {
     this._menu.on('restart', () => { this._fullReset(); });
     this._menu.on('mainmenu', () => { this._fullReset(); this._menu.show('main'); });
 
-    // Keep shop stardust in sync
     this._state.on('stardustChanged', () => this._shop?.updateStardust(this._state.stardust));
 
-    // Hide shop during combat (can't place during wave) – re-show on wave clear
     this._state.on('waveStarted', () => {
       this._shop.deselect();
       this._shop.hide();
@@ -484,20 +457,21 @@ export class Game {
     });
     this._menu.on('nextwave', () => { this._startWave(); });
     this._state.on('gameover', () => {
+      this._turretMenu?.hide();
+      this._shop?.hide();
       setTimeout(() => {
         this._menu.show('gameover', { score: this._state.score });
       }, 3500);
     });
 
-    // On victory show the overlay
     this._state.on('victory', ({ score }) => {
+      this._turretMenu?.hide();
+      this._shop?.hide();
       setTimeout(() => {
         this._menu.show('victory', { score });
       }, 2000);
     });
   }
-
-  // ── Game loop ─────────────────────────────────────────────────────────────
 
   _loop() {
     requestAnimationFrame(() => this._loop());
@@ -507,7 +481,6 @@ export class Game {
   }
 
   _update(delta) {
-    // Animate all registered objects
     this._animFns.forEach(o => o.update(delta));
 
     if (this._state.phase === 'combat') {
@@ -518,12 +491,9 @@ export class Game {
     }
   }
 
-  // ── Spawning ──────────────────────────────────────────────────────────────
-
   _startWave() {
     if (this._state.phase !== 'build' && this._state.phase !== 'menu') return;
 
-    // Build flat type queue from WaveConfig (0-indexed, wave hasn't incremented yet)
     const waveDef = WaveConfig[this._state.wave];
     if (!waveDef) return;
 
@@ -562,13 +532,12 @@ export class Game {
     }
   }
 
-  // Spawn any enemy type at a given path position (0–1).
-  // Used for the initial wave spawn and for Eximus on-death child spawns.
   _spawnEnemyAt(type, startPathT) {
     const factory = ENEMY_FACTORIES[type] || ENEMY_FACTORIES.standard;
     const e = factory.create();
     const startPos = this._pathCurve.getPointAt(Math.min(Math.max(startPathT, 0), 0.999));
     e.mesh.position.copy(startPos);
+    e.mesh.userData._joyBaseY = startPos.y;
     this._scene.add(e.mesh);
     this._animFns.push(e);
 
@@ -600,7 +569,6 @@ export class Game {
     this._enemies.push(enemyRecord);
   }
 
-  // Process Eximus child-spawns deferred from last frame.
   _flushDeferredSpawns() {
     if (!this._deferredSpawns.length) return;
     this._deferredSpawns.forEach(({ type, pathT }) => {
@@ -609,8 +577,6 @@ export class Game {
     this._deferredSpawns = [];
   }
 
-  // ── Enemy update ──────────────────────────────────────────────────────────
-
   _updateEnemies(delta) {
     const totalLen = this._pathCurve.getLength();
 
@@ -618,7 +584,6 @@ export class Game {
       const e = this._enemies[i];
       if (!e.alive) continue;
 
-      // Apply slow decay
       if (e.slowTimer > 0) {
         e.slowTimer -= delta;
         if (e.slowTimer <= 0) { e.slowTimer = 0; e.slowFactor = 1.0; }
@@ -626,8 +591,7 @@ export class Game {
       const effectiveSpeed = e.speed * (e.slowFactor != null ? e.slowFactor : 1.0);
       e.pathT += (effectiveSpeed * delta) / totalLen;
 
-      if (e.pathT >= 1) {
-        // Reached nexus – explode and damage
+      if (e.pathT >= 0.97) {
         e.alive = false;
         e.reachedEnd = true;
         if (e.stats?.type === 'boss') this._hud.hideBossBar();
@@ -645,7 +609,6 @@ export class Game {
         continue;
       }
 
-      // Healer: periodically restore HP to nearby living allies
       if (e.stats?.type === 'healer' && e.alive) {
         e.healAccum += delta;
         if (e.healAccum >= e.stats.healCooldown) {
@@ -665,21 +628,16 @@ export class Game {
       if (tangent.length() > 0.001) {
         e.mesh.rotation.y = Math.atan2(tangent.x, tangent.z);
       }
-      // Update boss bar live
       if (e.stats?.type === 'boss') this._hud.updateBossBar(e.hp);
     }
 
-    // Keep enemies that are still alive OR currently playing their reach/death anim
     this._enemies = this._enemies.filter(e => (e.alive || e.reachedEnd) && !e._done);
   }
-
-  // ── Tower combat ──────────────────────────────────────────────────────────
 
   _updateTowers(delta) {
     for (const tower of this._towers) {
       tower.fireTimer -= delta;
 
-      // Check if any Disruptor is within disruption range of this tower
       let disrupted = false;
       for (const dis of this._enemies) {
         if (!dis.alive || dis.stats?.type !== 'disruptor') continue;
@@ -689,7 +647,6 @@ export class Game {
         }
       }
 
-      // Find target based on targeting mode
       let best = null;
       const tp = tower.mesh.position;
 
@@ -701,7 +658,6 @@ export class Game {
           if (d < tower.range && d < bestDist) { best = e; bestDist = d; }
         }
       } else {
-        // 'first' — enemy furthest along the path (highest pathT) within range
         let bestPathT = -1;
         for (const e of this._enemies) {
           if (!e.alive) continue;
@@ -714,10 +670,8 @@ export class Game {
       if (best) {
         tower.trackTarget(best.mesh.position);
         if (tower.fireTimer <= 0) {
-          // Disruptors slow tower fire rate to 35 %
           tower.fireTimer = 1 / (disrupted ? tower.fireRate * 0.35 : tower.fireRate);
           if (tower.isAoe) {
-            // AoE: damage all enemies within tower range
             const aoePositions = [];
             const aoeHit = [];
             for (const e of this._enemies) {
@@ -730,7 +684,6 @@ export class Game {
             }
             tower.triggerShoot(aoePositions.length > 0 ? aoePositions : [best.mesh.position.clone()], tower.range);
 
-            // Process deaths for every hit enemy (not just best)
             for (const e of aoeHit) {
               if (e.stats?.type === 'boss' && e.alive && e.bossSpawnThreshold !== undefined) {
                 while (e.hp <= e.bossSpawnThreshold && e.bossSpawnThreshold > 0) {
@@ -762,7 +715,6 @@ export class Game {
               }
             }
           } else if (tower.isAreaSlow) {
-            // Cryo: slow + minor damage to all enemies in range
             const cryoHit = [];
             for (const e of this._enemies) {
               if (!e.alive) continue;
@@ -805,13 +757,11 @@ export class Game {
               }
             }
           } else {
-            // Single-target: Immune enemies (e.g. the Duck) cannot be damaged
             if (!best.stats?.immune) {
               best.hp -= tower.damage;
             }
             tower.triggerShoot(best.mesh.position);
 
-            // Boss minion spawns
             if (best.stats?.type === 'boss' && best.alive && best.bossSpawnThreshold !== undefined) {
               while (best.hp <= best.bossSpawnThreshold && best.bossSpawnThreshold > 0) {
                 const _BOSS_MINION_TYPES = ['fast', 'tank', 'healer', 'disruptor', 'eximus'];
@@ -847,8 +797,6 @@ export class Game {
     }
   }
 
-  // ── Sell tower ────────────────────────────────────────────────────────────
-
   _upgradeTower(tower) {
     if (tower.level >= 3) return;
     const upg = tower.upgrades[tower.level];
@@ -875,8 +823,6 @@ export class Game {
     if (towerIdx !== -1) this._towers.splice(towerIdx, 1);
     this._hud.showMsg(`Sold for +◈ ${refund}`, 2000);
   }
-
-  // ── Full reset ────────────────────────────────────────────────────────────
 
   _fullReset() {
     location.reload();

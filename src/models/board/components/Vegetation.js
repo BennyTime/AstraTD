@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 
-// ─── Grass tuft ───────────────────────────────────────────────────────────────
-function makeGrassTuft(cx, cz, hue = 0x52c46a) {
+const _texLoader = new THREE.TextureLoader();
+const _crateTextures = [
+  _texLoader.load('src/textures/material/box.jpg'),
+  _texLoader.load('src/textures/material/reinforced_box.jpg'),
+];
+
+function makeGrassTuft(cx, cz, hue = 0x3a7040) {
   const group = new THREE.Group();
   const m = new THREE.MeshStandardMaterial({
     color: hue, roughness: 0.85, metalness: 0.0, side: THREE.DoubleSide,
@@ -27,8 +32,7 @@ function makeGrassTuft(cx, cz, hue = 0x52c46a) {
   return group;
 }
 
-// ─── Small bush ───────────────────────────────────────────────────────────────
-function makeSmallBush(cx, cz, hue = 0x2d7838) {
+function makeSmallBush(cx, cz, hue = 0x1e5228) {
   const group = new THREE.Group();
   const darkHue = (hue & 0xfefefe) >>> 1;
   const lm = new THREE.MeshStandardMaterial({ color: hue,     roughness: 0.88, metalness: 0.0 });
@@ -55,7 +59,6 @@ function makeSmallBush(cx, cz, hue = 0x2d7838) {
   return group;
 }
 
-// ─── Planter box ──────────────────────────────────────────────────────────────
 const _planterBoxColors = [0x1e5e50, 0x7a2e10, 0x2a4a7a, 0x5a3a10, 0x1a4a2a];
 
 function makePlanterBox(cx, cz, rotY = 0, colorIndex = 0) {
@@ -91,21 +94,29 @@ function makePlanterBox(cx, cz, rotY = 0, colorIndex = 0) {
   return group;
 }
 
-// ─── Vegetation ───────────────────────────────────────────────────────────────
-/**
- * Builds all organic board decorations from a map's vegetation config.
- * Exposes a single `mesh` (THREE.Group) ready to add to the scene.
- *
- * @param {{ grassTufts?: Array, bushes?: Array, planters?: Array }} vegConfig
- *   - grassTufts: [[cx, cz, hue], ...]
- *   - bushes:     [[cx, cz, hue], ...]
- *   - planters:   [[cx, cz, rotY], ...]
- */
+const _crateTints = [0x5a4828, 0x3a4038];
+
+function makeCrate(cx, cz, rotY = 0, colorIndex = 0) {
+  const idx = colorIndex % _crateTextures.length;
+  const mat = new THREE.MeshStandardMaterial({
+    map: _crateTextures[idx],
+    color: _crateTints[idx],
+    roughness: 0.95, metalness: 0.0,
+  });
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.85), mat);
+  mesh.position.set(cx, 0.3 + 0.425, cz);
+  mesh.rotation.y = rotY;
+  mesh.castShadow = mesh.receiveShadow = true;
+  return mesh;
+}
+
+
 export class Vegetation {
-  constructor({ grassTufts = [], bushes = [], planters = [] } = {}) {
+  constructor({ grassTufts = [], bushes = [], planters = [], crates = [] } = {}) {
     this.mesh = new THREE.Group();
     grassTufts.forEach(([cx, cz, hue]) => this.mesh.add(makeGrassTuft(cx, cz, hue)));
     bushes.forEach(([cx, cz, hue]) => this.mesh.add(makeSmallBush(cx, cz, hue)));
     planters.forEach(([cx, cz, ry], i) => this.mesh.add(makePlanterBox(cx, cz, ry, i)));
+    crates.forEach(([cx, cz, ry, ci]) => this.mesh.add(makeCrate(cx, cz, ry, ci ?? 0)));
   }
 }

@@ -1,21 +1,55 @@
 import * as THREE from 'three';
 
-function buildPathTexture() {
+const _texLoader = new THREE.TextureLoader();
+const _roadTex = (() => {
+  const t = _texLoader.load('src/textures/material/road.jpg');
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+})();
+
+function roadMat(repU, repV, color) {
+  const tex = _roadTex.clone();
+  tex.repeat.set(repU, repV);
+  tex.needsUpdate = true;
+  return new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, metalness: 0.05, color });
+}
+
+const _PATH_THEMES = {
+  greenhouse: {
+    bg: '#0d1426',
+    dashColor: 'rgba(255,140,0,0.55)',
+    borderColor: 'rgba(255,100,0,0.3)',
+    matColor: 0x22304a,
+    matEmissive: 0x331800,
+    matEmissiveIntensity: 0.18,
+  },
+  industrial: {
+    bg: '#060a10',
+    dashColor: 'rgba(70,212,255,0.65)',
+    borderColor: 'rgba(0,180,255,0.28)',
+    matColor: 0x0e1a28,
+    matEmissive: 0x001828,
+    matEmissiveIntensity: 0.25,
+  },
+};
+
+function buildPathTexture(theme = 'greenhouse') {
+  const p = _PATH_THEMES[theme] ?? _PATH_THEMES.greenhouse;
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = '#0d1426';
+  ctx.fillStyle = p.bg;
   ctx.fillRect(0, 0, size, size);
 
   ctx.setLineDash([16, 10]);
-  ctx.strokeStyle = 'rgba(255,140,0,0.55)';
+  ctx.strokeStyle = p.dashColor;
   ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(size / 2, 0); ctx.lineTo(size / 2, size); ctx.stroke();
   ctx.setLineDash([]);
 
-  ctx.strokeStyle = 'rgba(255,100,0,0.3)';
+  ctx.strokeStyle = p.borderColor;
   ctx.lineWidth = 2;
   ctx.strokeRect(8, 0, size - 16, size);
 
@@ -24,35 +58,21 @@ function buildPathTexture() {
   return tex;
 }
 
-/**
- * Road – generates the visual path surface that enemies walk on.
- *
- * Flat BoxGeometry segments are laid along axis-aligned waypoints, with
- * square corner-fill patches at every interior waypoint to close gaps.
- * Exposes a single `mesh` (THREE.Group) ready to add to the scene.
- *
- * @param {Array<[number,number,number]>} waypoints  Board waypoints [x,y,z]
- */
 export class Road {
-  constructor(waypoints) {
+  constructor(waypoints, theme = 'greenhouse') {
     this.mesh = new THREE.Group();
-    this._build(waypoints);
+    this._build(waypoints, theme);
   }
 
-  _build(waypoints) {
+  _build(waypoints, theme) {
     const group = this.mesh;
-    const pathTex = buildPathTexture();
+    const p = _PATH_THEMES[theme] ?? _PATH_THEMES.greenhouse;
+    const pathTex = buildPathTexture(theme);
     const pathW = 2.2;
     const pathH = 0.02;
-    const pathUp = 0.31; // tiny gap above board surface to prevent z-fighting
+    const pathUp = 0.31;
+    const matColor = 0x888888;
 
-    const segMat = new THREE.MeshStandardMaterial({
-      map: pathTex, roughness: 0.52, metalness: 0.25,
-      color: 0x22304a,
-      emissive: new THREE.Color(0x331800), emissiveIntensity: 0.18,
-    });
-
-    // Straight segments between consecutive waypoints
     for (let i = 0; i < waypoints.length - 1; i++) {
       const a = new THREE.Vector3(...waypoints[i]);
       const b = new THREE.Vector3(...waypoints[i + 1]);
@@ -63,17 +83,17 @@ export class Road {
       const isH = Math.abs(dir.z) < 0.001;
       const segW = isH ? len : pathW;
       const segD = isH ? pathW : len;
-
-      const seg = new THREE.Mesh(new THREE.BoxGeometry(segW, pathH, segD), segMat);
+      const repU = segW / pathW;
+      const repV = segD / pathW;
+      const seg = new THREE.Mesh(new THREE.BoxGeometry(segW, pathH, segD), roadMat(repU, repV, matColor));
       seg.position.set(midX, pathUp, midZ);
       seg.receiveShadow = true;
       group.add(seg);
     }
 
-    // Square fill at every interior waypoint to close corner gaps
     for (let i = 1; i < waypoints.length - 1; i++) {
       const wp = waypoints[i];
-      const corner = new THREE.Mesh(new THREE.BoxGeometry(pathW, pathH, pathW), segMat);
+      const corner = new THREE.Mesh(new THREE.BoxGeometry(pathW, pathH, pathW), roadMat(1, 1, matColor));
       corner.position.set(wp[0], pathUp, wp[2]);
       corner.receiveShadow = true;
       group.add(corner);

@@ -19,11 +19,6 @@ import * as THREE from 'three';
  *   │       └─ pupilL / pupilR
  *   ├─ footL / footR     (orange feet, lift on step)
  *   └─ quackLabel        (invisible anchor – DOM handled by Game.js)
- *
- * Game mechanic:
- *   stats.immune = true  → Game.js skips damage.
- *   stats.damage = 0     → Nexus receives nothing on reach.
- *   Quack anim cycle fires every ~2.5 s (just visual).
  */
 
 export const DuckEnemyStats = {
@@ -67,11 +62,10 @@ export function createDuckEnemy() {
   group.add(bodyGroup);
 
   const bodyMesh = new THREE.Mesh(_geo.body, yellowMat);
-  bodyMesh.scale.set(1, 0.82, 1.1); // squash into wide-duck shape
+  bodyMesh.scale.set(1, 0.82, 1.1);
   bodyMesh.castShadow = true;
   bodyGroup.add(bodyMesh);
 
-  // Tail bump
   const tail = new THREE.Mesh(_geo.tail, yellowMat);
   tail.position.set(0, 0.10, -0.38);
   tail.scale.set(0.8, 0.9, 0.7);
@@ -87,6 +81,7 @@ export function createDuckEnemy() {
   wingR.position.set( 0.42, 0.06, 0.05);
   wingR.rotation.z = -0.3;
   bodyGroup.add(wingR);
+
   // ── Legs ─────────────────────────────────────────────────────────────────
   const legLMesh = new THREE.Mesh(_geo.leg, orangeMat);
   legLMesh.position.set(-0.20, -0.44, 0.05);
@@ -95,6 +90,7 @@ export function createDuckEnemy() {
   const legRMesh = new THREE.Mesh(_geo.leg, orangeMat);
   legRMesh.position.set( 0.20, -0.44, 0.05);
   bodyGroup.add(legRMesh);
+
   // ── Head ─────────────────────────────────────────────────────────────────
   const headGroup = new THREE.Group();
   headGroup.position.set(0, 0.36, 0.30);
@@ -104,13 +100,12 @@ export function createDuckEnemy() {
   headMesh.castShadow = true;
   headGroup.add(headMesh);
 
-  // Beak – two independent hinge pivots so each jaw rotates cleanly from its base
   const upperBeakPivot = new THREE.Group();
   upperBeakPivot.position.set(0, 0.02, 0.23);
   headGroup.add(upperBeakPivot);
 
   const beakUpper = new THREE.Mesh(_geo.beakUpper, orangeMat);
-  beakUpper.position.set(0, 0.02, 0.10);  // extends forward from hinge
+  beakUpper.position.set(0, 0.02, 0.10);
   upperBeakPivot.add(beakUpper);
 
   const lowerBeakPivot = new THREE.Group();
@@ -118,10 +113,9 @@ export function createDuckEnemy() {
   headGroup.add(lowerBeakPivot);
 
   const beakLower = new THREE.Mesh(_geo.beakLower, orangeMat);
-  beakLower.position.set(0, -0.02, 0.09);  // extends forward from hinge
+  beakLower.position.set(0, -0.02, 0.09);
   lowerBeakPivot.add(beakLower);
 
-  // Eyes
   const eyeL = new THREE.Mesh(_geo.eye, eyeWhiteMat);
   eyeL.position.set(-0.12, 0.07, 0.18);
   headGroup.add(eyeL);
@@ -146,7 +140,6 @@ export function createDuckEnemy() {
     base.castShadow = true;
     footGroup.add(base);
 
-    // Three toes pointing forward
     for (let i = -1; i <= 1; i++) {
       const toe = new THREE.Mesh(_geo.toe, orangeMat);
       toe.position.set(i * 0.09, 0, 0.16);
@@ -170,12 +163,11 @@ export function createDuckEnemy() {
   let explodeTime = 0;
   let t = 0;
 
-  const JOY_DURATION = 1.5; // longer victory dance
+  const JOY_DURATION = 1.5;
 
   function setWalk() { state = 'walk'; }
 
   function triggerDeath(onDone) {
-    // Duck can never actually die (immune), but implement the callback anyway
     state = 'death';
     deathTimer = 0;
     group.userData._deathDone = onDone;
@@ -194,28 +186,22 @@ export function createDuckEnemy() {
     if (state === 'walk') {
       walkPhase += delta * 3.5;
 
-      // Waddle: body rocks side to side
       bodyGroup.rotation.z = Math.sin(walkPhase) * 0.22;
       bodyGroup.position.y = 0.70 * SCALE + Math.abs(Math.sin(walkPhase)) * 0.06;
 
-      // Foot lift
       footL.position.y = 0.06 * SCALE + Math.max(0, -Math.sin(walkPhase)) * 0.12;
       footR.position.y = 0.06 * SCALE + Math.max(0,  Math.sin(walkPhase)) * 0.12;
 
-      // Head bob (opposite phase to waddle for charm)
       headGroup.rotation.z = -Math.sin(walkPhase) * 0.12;
 
-      // Wing flap (slow, like a happy duck)
-      wingL.rotation.z =  0.3 + Math.sin(t * 2.8) * 0.20;
+      wingL.rotation.z = 0.3 + Math.sin(t * 2.8) * 0.20;
       wingR.rotation.z = -0.3 - Math.sin(t * 2.8) * 0.20;
 
-      // Periodic blink: squeeze eye scale Y to near 0 briefly
       const blinkCycle = (t % 3.2);
       const blink = blinkCycle < 0.12 ? (1 - blinkCycle / 0.06) : blinkCycle < 0.24 ? ((blinkCycle - 0.12) / 0.06) : 1;
       eyeL.scale.y = Math.max(0.05, blink);
       eyeR.scale.y = Math.max(0.05, blink);
 
-      // Quack logic
       quackAccum += delta;
       if (!quacking && quackAccum >= QUACK_INTERVAL) {
         quacking = true;
@@ -224,19 +210,16 @@ export function createDuckEnemy() {
       }
       if (quacking) {
         quackTimer += delta;
-        // Tilt head up, open beak
         const phase = Math.min(1, quackTimer / (QUACK_DUR * 0.4));
         const close = quackTimer > QUACK_DUR * 0.5 ? 1 - Math.min(1, (quackTimer - QUACK_DUR * 0.5) / (QUACK_DUR * 0.5)) : 1;
         headGroup.rotation.x = -phase * 0.20 * close;
-        upperBeakPivot.rotation.x = -phase * 0.45 * close;  // upper jaw lifts
-        lowerBeakPivot.rotation.x =  phase * 0.35 * close;  // lower jaw drops
-        // Flash body
+        upperBeakPivot.rotation.x = -phase * 0.45 * close;
+        lowerBeakPivot.rotation.x =  phase * 0.35 * close;
         quackMat.emissiveIntensity = phase * 2 * close;
         if (quackTimer >= QUACK_DUR) quacking = false;
       }
 
     } else if (state === 'death') {
-      // Duck doesn't really die, but animate a sad droop
       deathTimer += delta;
       bodyGroup.rotation.z = Math.min(Math.PI / 2, deathTimer * 3);
       bodyGroup.position.y = Math.max(0.15, 0.70 * SCALE - deathTimer * 0.8);
@@ -254,7 +237,6 @@ export function createDuckEnemy() {
       explodeTime += delta;
 
       if (explodeTime < JOY_DURATION) {
-        // Extremely happy duck: vigorous waddle + rapid quacking
         walkPhase += delta * 8;
         bodyGroup.rotation.z = Math.sin(walkPhase) * 0.5;
         bodyGroup.position.y = 0.70 * SCALE + Math.abs(Math.sin(walkPhase)) * 0.18;
@@ -262,7 +244,6 @@ export function createDuckEnemy() {
         wingL.rotation.z =  0.3 + Math.sin(t * 12) * 0.55;
         wingR.rotation.z = -0.3 - Math.sin(t * 12) * 0.55;
 
-        // Beak flapping rapidly
         const bkFast = Math.abs(Math.sin(t * 15)) * 0.6;
         upperBeakPivot.rotation.x = -bkFast;
         lowerBeakPivot.rotation.x =  bkFast * 0.7;
@@ -281,7 +262,6 @@ export function createDuckEnemy() {
           if (typeof hitCb === 'function') hitCb();
         }
 
-        // Fast fade (duck gracefully disappears)
         const fade = Math.max(0, 1 - burstTime / 0.5);
         [yellowMat, orangeMat].forEach(m => { m.transparent = true; m.opacity = fade; });
 

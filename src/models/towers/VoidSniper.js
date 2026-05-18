@@ -1,21 +1,5 @@
 import * as THREE from 'three';
 
-/**
- * VoidSniper – ultra-long-range single-target tower.
- *
- * Hierarchy:
- *   group
- *   ├─ base           (tall narrow hexagonal pedestal, purple glow)
- *   ├─ rotator        (yaws to face target)
- *   │   ├─ body       (sleek angular housing)
- *   │   ├─ barrel     (extra-long thin barrel)
- *   │   ├─ scope      (large side-mounted lens assembly)
- *   │   └─ chargeCoil (helix coils that glow before firing)
- *   └─ snapBeam       (thin violet beam, shown briefly on fire)
- *
- * Fire mechanic: Single target, very long range, high damage.
- */
-
 export const VoidSniperStats = {
   cost: 150,
   range: 12,
@@ -44,12 +28,10 @@ const _vGeo = {
 export function createVoidSniper() {
   const group = new THREE.Group();
 
-  // Scratch vectors — reused every frame to avoid GC pressure
   const _scratchOrigin = new THREE.Vector3();
   const _scratchFrom   = new THREE.Vector3();
   const _scratchDir    = new THREE.Vector3();
 
-  // ── Materials ──────────────────────────────────────────────────────────
   const baseMat = new THREE.MeshStandardMaterial({ color: 0x0d0420, roughness: 0.45, metalness: 0.9 });
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x180830, roughness: 0.35, metalness: 0.88 });
   const barrelMat = new THREE.MeshStandardMaterial({ color: 0x0a0318, roughness: 0.25, metalness: 1.0 });
@@ -61,7 +43,6 @@ export function createVoidSniper() {
   const flashMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: new THREE.Color(0xffffff), emissiveIntensity: 10, transparent: true, opacity: 0 });
   const muzzleRingMat = new THREE.MeshStandardMaterial({ color: 0xdd88ff, emissive: new THREE.Color(0xcc44ff), emissiveIntensity: 5, transparent: true, opacity: 0 });
 
-  // ── Base (3-tier narrow pedestal) ──
   const base1 = new THREE.Mesh(_vGeo.base, baseMat);
   base1.position.y = 0.16;
   base1.castShadow = base1.receiveShadow = true;
@@ -77,7 +58,6 @@ export function createVoidSniper() {
   base3.castShadow = true;
   group.add(base3);
 
-  // Glow ring on base
   const baseRing = new THREE.Mesh(_vGeo.ring, ringMat.clone());
   baseRing.rotation.x = Math.PI / 2;
   baseRing.position.y = 0.16;
@@ -88,17 +68,14 @@ export function createVoidSniper() {
   hexBorder.position.y = 0.16;
   group.add(hexBorder);
 
-  // ── Rotator ──
   const rotator = new THREE.Group();
   rotator.position.y = 0.78;
   group.add(rotator);
 
-  // Angular housing body
   const bodyMesh = new THREE.Mesh(_vGeo.body, bodyMat);
   bodyMesh.castShadow = true;
   rotator.add(bodyMesh);
 
-  // Long barrel
   const barrelPivot = new THREE.Group();
   barrelPivot.position.set(0, 0, 0.28);
   rotator.add(barrelPivot);
@@ -114,7 +91,6 @@ export function createVoidSniper() {
   barrelTip.position.z = 1.29;
   barrelPivot.add(barrelTip);
 
-  // Charge coils along the barrel
   const coils = [];
   for (let i = 0; i < 4; i++) {
     const coil = new THREE.Mesh(_vGeo.coilRing, ringMat.clone());
@@ -124,7 +100,6 @@ export function createVoidSniper() {
     coils.push(coil);
   }
 
-  // Side-mounted scope
   const scopeGroup = new THREE.Group();
   scopeGroup.position.set(0.25, 0.08, 0.18);
   rotator.add(scopeGroup);
@@ -137,35 +112,30 @@ export function createVoidSniper() {
   scopeLens.position.z = 0.20;
   scopeGroup.add(scopeLens);
 
-  // Glow beam (wide, soft – sits behind snap beam)
   const glowBeam = new THREE.Mesh(_vGeo.glowBeam, glowBeamMat);
   glowBeam.rotation.x = Math.PI / 2;
   glowBeam.position.set(0, 0, 1.0);
   glowBeam.visible = false;
   barrelPivot.add(glowBeam);
 
-  // Snap beam (sharp core)
   const snapBeam = new THREE.Mesh(_vGeo.snapBeam, beamMat);
   snapBeam.rotation.x = Math.PI / 2;
   snapBeam.position.set(0, 0, 1.0);
   snapBeam.visible = false;
   barrelPivot.add(snapBeam);
 
-  // Muzzle flash sphere
   const flashSphere = new THREE.Mesh(_vGeo.flashSphere, flashMat);
   flashSphere.position.set(0, 0, 1.4);
   flashSphere.scale.setScalar(0.1);
   flashSphere.visible = false;
   barrelPivot.add(flashSphere);
 
-  // Muzzle ring (expands outward from barrel tip)
   const muzzleRing = new THREE.Mesh(_vGeo.muzzleRing, muzzleRingMat);
   muzzleRing.rotation.x = Math.PI / 2;
   muzzleRing.position.set(0, 0, 1.38);
   muzzleRing.visible = false;
   barrelPivot.add(muzzleRing);
 
-  // ── State ──
   let spawnTimer = 0;
   let spawnDone = false;
   let shootTimer = 0.45;
@@ -183,17 +153,14 @@ export function createVoidSniper() {
     shootTimer = 0;
     group.userData._shootDone = onDone;
 
-    // Flash burst
     flashSphere.visible = true;
     flashSphere.scale.setScalar(0.4);
     flashMat.opacity = 1.0;
 
-    // Muzzle ring
     muzzleRing.visible = true;
     muzzleRing.scale.set(1, 1, 1);
     muzzleRingMat.opacity = 0.9;
 
-    // Beams
     snapBeam.visible = true;
     glowBeam.visible = true;
 
@@ -207,11 +174,9 @@ export function createVoidSniper() {
       glowBeamMat.opacity = 0.55;
     }
 
-    // Coils flare
     coils.forEach(c => { c.material.emissiveIntensity = 8; });
     scopeLens.material.emissiveIntensity = 8;
 
-    // Hard recoil
     barrelPivot.position.z = 0.28 - 0.26;
   }
 
@@ -236,7 +201,6 @@ export function createVoidSniper() {
       return;
     }
 
-    // Idle: rings pulse, coils spin
     baseRing.rotation.z += delta * 0.8;
     coils.forEach((c, i) => {
       c.rotation.z += delta * (0.6 + i * 0.3) * (i % 2 === 0 ? 1 : -1);
@@ -244,37 +208,30 @@ export function createVoidSniper() {
     scopeLens.material.emissiveIntensity = 2.0 + Math.sin(t * 1.8) * 0.5;
     lensMat.emissiveIntensity = scopeLens.material.emissiveIntensity;
 
-    // Shoot animation
     if (shootTimer < 0.55) {
       shootTimer += delta;
       const s = shootTimer / 0.55;
 
-      // Recoil recover (spring back with overshoot)
       barrelPivot.position.z = 0.28 - Math.sin(s * Math.PI) * 0.26;
 
-      // Flash: huge burst then snap-fade in first 18 %
       const flashS = Math.min(s / 0.18, 1);
       flashSphere.scale.setScalar(0.4 + flashS * 1.6);
       flashMat.opacity = Math.pow(1 - flashS, 1.5);
       if (flashMat.opacity <= 0.01) flashSphere.visible = false;
 
-      // Muzzle ring expands and fades
       const ringS = Math.min(s / 0.40, 1);
       muzzleRing.scale.set(1 + ringS * 5, 1 + ringS * 5, 1);
       muzzleRingMat.opacity = (1 - ringS) * 0.9;
       if (muzzleRingMat.opacity <= 0.01) muzzleRing.visible = false;
 
-      // Glow beam: fades over first 45 %
       const glowS = Math.min(s / 0.45, 1);
       glowBeamMat.opacity = (1 - glowS) * 0.55;
       if (glowBeamMat.opacity <= 0.01) glowBeam.visible = false;
 
-      // Snap beam: stays bright then cuts at 60 %
       const beamS = Math.min(s / 0.60, 1);
       beamMat.opacity = Math.pow(1 - beamS, 0.7);
       if (beamMat.opacity <= 0.01) snapBeam.visible = false;
 
-      // Coils cool down
       coils.forEach((c, i) => {
         c.material.emissiveIntensity = Math.max(1.6 + i * 0.3, 8 * (1 - s * 3));
       });

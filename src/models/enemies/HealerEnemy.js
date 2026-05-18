@@ -11,13 +11,6 @@ import * as THREE from 'three';
  *       ├─ shell[0-2]  (3 arc segments orbiting the equator)
  *       ├─ ringA/ringB (two rotating torus rings, tilted)
  *       └─ arm[0-3]    (4 extending arms with glowing tips)
- *
- * Game mechanics (handled by Game.js):
- *   stats.healRadius   – radius within which nearby enemies are healed
- *   stats.healAmount   – HP restored per tick
- *   stats.healCooldown – seconds between heal ticks
- *
- * Animations: slow drift, rotating rings, arm pulse, dissolve death.
  */
 
 export const HealerEnemyStats = {
@@ -60,12 +53,10 @@ export function createHealerEnemy() {
   floatGroup.position.y = 1.1 * SCALE;
   group.add(floatGroup);
 
-  // Main sphere
   const body = new THREE.Mesh(_geo.body, bodyMat);
   body.castShadow = true;
   floatGroup.add(body);
 
-  // Inner glowing core
   const core = new THREE.Mesh(_geo.core, coreMat);
   floatGroup.add(core);
 
@@ -164,33 +155,26 @@ export function createHealerEnemy() {
     if (state === 'walk') {
       walkPhase += delta * 2;
 
-      // Gentle hover
       floatGroup.position.y = 1.1 * SCALE + Math.sin(walkPhase * 1.2) * 0.10;
 
-      // Slow body rotation
       floatGroup.rotation.y += delta * 0.6;
 
-      // Shell arcs orbit
       shellGroup.rotation.y += delta * 1.4;
 
-      // Rings rotate (opposite directions)
       ringA.rotation.z += delta * 1.8;
       ringB.rotation.z -= delta * 1.8;
 
-      // Arm tips bob with individual phase offsets
       arms.forEach((arm, i) => {
         arm.armGroup.rotation.x = Math.sin(walkPhase + i * 1.5) * 0.22;
         arm.tip.scale.setScalar(0.9 + Math.sin(t * 4 + i) * 0.15);
       });
 
-      // Core pulse
       coreMat.emissiveIntensity = 2.2 + Math.sin(t * 5) * 0.6;
       ringMat.opacity = 0.7 + Math.sin(t * 3) * 0.2;
 
     } else if (state === 'death') {
       deathTimer += delta;
 
-      // Shatter: scale down + fade
       const scale = Math.max(0.01, 1 - deathTimer / 0.7);
       floatGroup.scale.setScalar(scale);
       floatGroup.position.y = Math.max(0.3, 1.1 * SCALE - deathTimer * 1.2);
@@ -210,13 +194,12 @@ export function createHealerEnemy() {
       explodeTime += delta;
 
       if (explodeTime < JOY_DURATION) {
-        // Joy: rings spin super fast, arms spread wide
         ringA.rotation.z += delta * 8;
         ringB.rotation.z -= delta * 8;
         shellGroup.rotation.y += delta * 6;
         floatGroup.rotation.y += delta * 3;
         coreMat.emissiveIntensity = 4 + Math.sin(t * 20) * 1.5;
-        tipMat.emissiveIntensity  = 5 + Math.sin(t * 25) * 2;
+        tipMat.emissiveIntensity = 5 + Math.sin(t * 25) * 2;
 
       } else {
         const burstTime = explodeTime - JOY_DURATION;

@@ -12,7 +12,6 @@ import * as THREE from 'three';
  *       │   └─ thruster glow
  *       └─ fin          (tail stabiliser)
  *
- * Animations: hover bob + wing tilt, spin-shrink death, joy-spin then burst explode
  */
 
 export const FastEnemyStats = {
@@ -52,13 +51,11 @@ export function createFastEnemy() {
   bodyMesh.castShadow = true;
   fuselage.add(bodyMesh);
 
-  // Cockpit dome
   const cockpit = new THREE.Mesh(_geo.cockpit, bodyMat);
   cockpit.position.y = 0.10;
   cockpit.castShadow = true;
   fuselage.add(cockpit);
 
-  // Forward eye-strip
   const eye = new THREE.Mesh(_geo.eyeStrip, eyeMat);
   eye.position.set(0, 0.06, 0.21);
   fuselage.add(eye);
@@ -87,7 +84,6 @@ export function createFastEnemy() {
   fin.position.set(0, 0.12, -0.22);
   fuselage.add(fin);
 
-  // Accent stripe across fuselage equator
   const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.04, 0.04), accentMat);
   stripe.position.set(0, 0.0, 0.20);
   fuselage.add(stripe);
@@ -146,14 +142,11 @@ export function createFastEnemy() {
     if (state === 'walk') {
       walkPhase += delta * 7;
 
-      // Hover bob
       fuselage.position.y = 0.82 * SCALE + Math.sin(walkPhase * 1.4) * 0.07;
 
-      // Wing tilt
       wingGroups.L.rotation.z =  Math.sin(walkPhase) * 0.14;
       wingGroups.R.rotation.z = -Math.sin(walkPhase) * 0.14;
 
-      // Eye and thruster glow flicker
       eyeMat.emissiveIntensity = 2.3 + Math.sin(t * 9)  * 0.5;
       accentMat.emissiveIntensity = 1.4 + Math.sin(t * 13) * 0.4;
 
@@ -176,7 +169,6 @@ export function createFastEnemy() {
       explodeTime += delta;
 
       if (explodeTime < JOY_DURATION) {
-        // Joy spin
         fuselage.rotation.y += delta * 6;
         eyeMat.emissiveIntensity = 3.5 + Math.sin(explodeTime * 22) * 1.2;
 

@@ -1,30 +1,3 @@
-/**
- * TowerShop – bottom-panel shop UI for selecting which tower to place.
- *
- * Shows one card per available tower type. Clicking a card selects that
- * tower for placement; clicking again (or pressing Escape) deselects.
- * Cards are dimmed when the player cannot afford them.
- *
- * Usage:
- *   const shop = new TowerShop(towerDefs, onSelect);
- *   shop.show();
- *   shop.updateStardust(amount);
- *
- * towerDefs: Array<{
- *   key: string,       // internal key, e.g. 'laser'
- *   name: string,      // display name
- *   cost: number,
- *   range: number | string,
- *   damage: number | string,
- *   fireRate: number | string,
- *   tag: string,       // short mechanic label, e.g. 'Single Target'
- *   color: string,     // CSS accent colour for the card border/title
- *   icon: string,      // Unicode/emoji icon shown on the card
- * }>
- *
- * onSelect: (key: string | null) => void
- *   Called whenever the selection changes.
- */
 export class TowerShop {
   constructor(towerDefs, onSelect) {
     this._defs = towerDefs;
@@ -37,12 +10,10 @@ export class TowerShop {
     this._injectCSS();
     this._buildDOM();
 
-    // Escape key deselects
     window.addEventListener('keydown', e => {
       if (e.code === 'Escape') this.deselect();
     });
 
-    // Number hotkeys 1–4 cycle through towers
     window.addEventListener('keydown', e => {
       const idx = parseInt(e.key, 10) - 1;
       if (idx >= 0 && idx < this._defs.length) {
@@ -60,13 +31,11 @@ export class TowerShop {
   show() { this._panel.style.display = 'flex'; }
   hide() { this._panel.style.display = 'none'; }
 
-  /** Update displayed stardust and dim unaffordable cards. */
   updateStardust(amount) {
     this._stardust = amount;
     this._refreshAffordability();
   }
 
-  /** Programmatically deselect the current tower. */
   deselect() {
     if (this._selected === null) return;
     this._selected = null;
@@ -98,15 +67,13 @@ export class TowerShop {
   _buildDOM() {
     this._panel = document.createElement('div');
     this._panel.id = 'tower-shop';
-    this._panel.style.display = 'none'; // hidden until show() is called
+    this._panel.style.display = 'none';
 
-    // Header label
     const label = document.createElement('div');
     label.className = 'ts-label';
     label.textContent = 'TOWER SHOP';
     this._panel.appendChild(label);
 
-    // Cards
     this._defs.forEach((def, i) => {
       const card = document.createElement('div');
       card.className = 'ts-card';
@@ -131,7 +98,6 @@ export class TowerShop {
       this._cards[def.key] = card;
     });
 
-    // Place-mode hint shown below the panel
     const hint = document.createElement('div');
     hint.id = 'ts-hint';
     hint.textContent = 'Click grid to place  •  ESC to cancel  •  1-4 hotkeys';
@@ -154,7 +120,6 @@ export class TowerShop {
       if (!card) return;
       const canAfford = this._stardust >= def.cost;
       card.classList.toggle('ts-unaffordable', !canAfford);
-      // Deselect if we can no longer afford the selected tower
       if (!canAfford && this._selected === def.key) {
         this.deselect();
       }

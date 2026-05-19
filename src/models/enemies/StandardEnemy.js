@@ -130,9 +130,6 @@ export function createStandardEnemy() {
     const lowerArmPivot = new THREE.Group();
     lowerArmPivot.position.y = -0.28;
     upperArmPivot.add(lowerArmPivot);
-    const lowerArmPivot = new THREE.Group();
-    lowerArmPivot.position.y = -0.28;
-    upperArmPivot.add(lowerArmPivot);
 
     const lowerArm = new THREE.Mesh(_geo.lowerArm, bodyMat);
     lowerArm.position.y = -0.125;

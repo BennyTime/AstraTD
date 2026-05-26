@@ -74,7 +74,7 @@ export function createFloatingCrystal({
     inner.add(accent);
   });
 
-  const light = new THREE.PointLight(color, 3.2, 16 * scale);
+  const light = new THREE.PointLight(color, 3.2, 10 * scale);
   inner.add(light);
 
   const coreSphereGeo = new THREE.SphereGeometry(0.10, 10, 10);
@@ -88,9 +88,6 @@ export function createFloatingCrystal({
   });
   const coreSphere = new THREE.Mesh(coreSphereGeo, coreSphereMat);
   inner.add(coreSphere);
-
-  const coreLight = new THREE.PointLight(color, 4.5, 2.5 * scale);
-  inner.add(coreLight);
 
   inner.scale.setScalar(scale);
   group.add(inner);
@@ -123,7 +120,6 @@ export function createFloatingCrystal({
     const basePulse = 4.5 + Math.sin(t * 2.0 + 0.4) * 1.2;
     const flareBoost = flareCurve * 28;
     coreSphereMat.emissiveIntensity = basePulse + flareBoost;
-    coreLight.intensity = (4.0 + Math.sin(t * 2.0 + 0.4) * 1.5) + flareCurve * 18;
   }
 
   return { mesh: group, update };
@@ -142,7 +138,7 @@ export function createCrystalCluster(opts = {}) {
   const offsets = [[0, 0], [0.55, 0.2], [-0.45, 0.3], [0.15, -0.5]];
 
   configs.forEach((cfg, i) => {
-    const c = createFloatingCrystal({ cfg, opts });
+    const c = createFloatingCrystal({ ...cfg, ...opts });
     c.mesh.position.set(offsets[i][0], 0, offsets[i][1]);
     group.add(c.mesh);
     updateFns.push(c.update);

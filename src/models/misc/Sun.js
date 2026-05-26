@@ -38,8 +38,8 @@ export function createSun() {
 
   const light = new THREE.DirectionalLight(0xfff2d0, 2.8);
   light.castShadow = true;
-  light.shadow.mapSize.width = 2048;
-  light.shadow.mapSize.height = 2048;
+  light.shadow.mapSize.width = 1024;
+  light.shadow.mapSize.height = 1024;
   light.shadow.camera.near = 1;
   light.shadow.camera.far = 230;
   light.shadow.camera.left = light.shadow.camera.bottom = -30;

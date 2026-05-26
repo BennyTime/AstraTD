@@ -121,7 +121,7 @@ export class Game {
     this._hudEl = hudElement;
     this._config = GameConfig;
     this._state = new GameState(GameConfig);
-    this._animFns = [];
+    this._animFns = new Set();
     this._enemies = [];
     this._towers = [];
     this._clock = new THREE.Clock(false);
@@ -146,9 +146,9 @@ export class Game {
 
   _initRenderer() {
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.setSize(window.innerWidth, window.innerHeight);
     this._mount.appendChild(renderer.domElement);
     this._renderer = renderer;
@@ -193,7 +193,7 @@ export class Game {
     
     const stars = createStarField();
     sc.add(stars.mesh);
-    this._animFns.push(stars);
+    this._animFns.add(stars);
 
     const sunPos = new THREE.Vector3(25, 5, -40);
     const sun = createSun();
@@ -202,12 +202,12 @@ export class Game {
     sun.light.position.copy(sunPos); 
     sc.add(sun.light);
     sc.add(sun.light.target); 
-    this._animFns.push(sun);
+    this._animFns.add(sun);
 
     const board = new Board(this._config.activeMap);
     board.mesh.position.y = this._config.boardY;
     sc.add(board.mesh);
-    this._animFns.push(board);
+    this._animFns.add(board);
     this._board = board;
 
     const yOff = this._config.boardY + 0.6;
@@ -217,6 +217,7 @@ export class Game {
       curvePath.add(new THREE.LineCurve3(pts[i], pts[i + 1]));
     }
     this._pathCurve = curvePath;
+    this._pathLength = curvePath.getLength();
 
     const firstWp = wp[0];
     const lastWp  = wp[wp.length - 1];
@@ -232,7 +233,7 @@ export class Game {
       lastWp[2] + (nexusDz / nexusLen) * 1.0
     );
     sc.add(nexus.mesh);
-    this._animFns.push(nexus);
+    this._animFns.add(nexus);
     this._nexus = nexus;
 
     this._state.on('nexusDamaged', ({ hp }) => {
@@ -249,7 +250,7 @@ export class Game {
     ship.mesh.rotation.y = Math.atan2(shipDx, shipDz) + Math.PI; 
     ship.setBaseY(boardY + 4);
     sc.add(ship.mesh);
-    this._animFns.push(ship);
+    this._animFns.add(ship);
     this._cargoShip = ship;
 
     const crystalDefs = [
@@ -272,7 +273,7 @@ export class Game {
       const c = createFloatingCrystal({ color, scale, orbitR: 0, orbitY: this._config.boardY + orbitY, phase });
       c.mesh.position.set(x, 0, z);
       sc.add(c.mesh);
-      this._animFns.push(c);
+      this._animFns.add(c);
     });
 
     const clusterDefs = [
@@ -285,7 +286,7 @@ export class Game {
       const cl = createCrystalCluster({ orbitY });
       cl.mesh.position.set(x, this._config.boardY + y, z);
       sc.add(cl.mesh);
-      this._animFns.push(cl);
+      this._animFns.add(cl);
     });
   }
 
@@ -385,7 +386,7 @@ export class Game {
     const turret = def.create();
     turret.mesh.position.set(gx, boardY, gz);
     this._scene.add(turret.mesh);
-    this._animFns.push(turret);
+    this._animFns.add(turret);
     const towerData = {
       mesh: turret.mesh,
       update: turret.update,
@@ -539,7 +540,7 @@ export class Game {
     e.mesh.position.copy(startPos);
     e.mesh.userData._joyBaseY = startPos.y;
     this._scene.add(e.mesh);
-    this._animFns.push(e);
+    this._animFns.add(e);
 
     const { hp, speed, damage, reward } = factory.stats;
     const enemyRecord = {
@@ -578,7 +579,7 @@ export class Game {
   }
 
   _updateEnemies(delta) {
-    const totalLen = this._pathCurve.getLength();
+    const totalLen = this._pathLength;
 
     for (let i = this._enemies.length - 1; i >= 0; i--) {
       const e = this._enemies[i];
@@ -600,8 +601,7 @@ export class Game {
           () => { this._state.damageNexus(nexusDamage); },
           () => {
             this._scene.remove(e.mesh);
-            const idx = this._animFns.indexOf(e._animRef);
-            if (idx !== -1) this._animFns.splice(idx, 1);
+            this._animFns.delete(e._animRef);
             e._done = true;
           }
         );
@@ -707,8 +707,7 @@ export class Game {
                 if (e.stats?.type === 'boss') this._hud.hideBossBar();
                 e.triggerDeath(() => {
                   this._scene.remove(e.mesh);
-                  const idx = this._animFns.indexOf(e._animRef);
-                  if (idx !== -1) this._animFns.splice(idx, 1);
+                  this._animFns.delete(e._animRef);
                   e._done = true;
                 });
                 this._state.enemyKilled(e.reward);
@@ -749,8 +748,7 @@ export class Game {
                 if (e.stats?.type === 'boss') this._hud.hideBossBar();
                 e.triggerDeath(() => {
                   this._scene.remove(e.mesh);
-                  const idx = this._animFns.indexOf(e._animRef);
-                  if (idx !== -1) this._animFns.splice(idx, 1);
+                  this._animFns.delete(e._animRef);
                   e._done = true;
                 });
                 this._state.enemyKilled(e.reward);
@@ -785,8 +783,7 @@ export class Game {
               if (best.stats?.type === 'boss') this._hud.hideBossBar();
               best.triggerDeath(() => {
                 this._scene.remove(best.mesh);
-                const idx = this._animFns.indexOf(best._animRef);
-                if (idx !== -1) this._animFns.splice(idx, 1);
+                this._animFns.delete(best._animRef);
                 best._done = true;
               });
               this._state.enemyKilled(reward);
@@ -817,8 +814,7 @@ export class Game {
     const refund = Math.floor(tower.totalSpent * 0.5);
     this._state.addStardust(refund);
     this._scene.remove(tower.mesh);
-    const animIdx = this._animFns.indexOf(tower._animRef);
-    if (animIdx !== -1) this._animFns.splice(animIdx, 1);
+    this._animFns.delete(tower._animRef);
     const towerIdx = this._towers.indexOf(tower);
     if (towerIdx !== -1) this._towers.splice(towerIdx, 1);
     this._hud.showMsg(`Sold for +◈ ${refund}`, 2000);
